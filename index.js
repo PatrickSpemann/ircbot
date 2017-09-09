@@ -2,7 +2,20 @@ var irc = require("irc");
 var URL = require("url-parse")
 var getUrls = require("get-urls");
 var YouTube = require("youtube-node");
+//TODO
+/*
+    accept youtu.be urls
+    format output properly
+    run as service
+    add tests
+    make robust
+    get own api key
+    add better readme
+    ???
+    profit
+*/
 var youtube = new YouTube();
+
 youtube.setKey("AIzaSyB1OOSpTREs85WUMvIgJvLTZKye4BVsoFU");
 
 const networkUrl = "irc.quakenet.org";
