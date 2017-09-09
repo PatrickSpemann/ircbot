@@ -1,3 +1,4 @@
+var utils = require("./ircbot-utils");
 var _clientInfo = undefined;
 
 module.exports = function (clientInfo, message) {
@@ -5,8 +6,8 @@ module.exports = function (clientInfo, message) {
     handleCommand(message);
 };
 function handleCommand(message) {
-    var command = extractCommand(message);
-    var parameters = extractParameters(message);
+    var command = utils.extractCommand(message);
+    var parameters = utils.extractParameters(message);
     switch (command) {
         case "help":
         case "commands":
@@ -21,19 +22,6 @@ function handleCommand(message) {
         default:
             break;
     }
-}
-function extractCommand(message) {
-    if (message.indexOf("!") !== 0)
-        return undefined;
-    var spaceIndex = message.indexOf(" ");
-    var end = spaceIndex === -1 ? undefined : spaceIndex;
-    return message.substring(1, end);
-}
-function extractParameters(message) {
-    var spaceIndex = message.indexOf(" ");
-    if (spaceIndex === -1)
-        return "";
-    return message.substring(spaceIndex + 1);
 }
 function sendHelp() {
     var helpString = "Available commands:\n";
