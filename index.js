@@ -3,17 +3,6 @@ var URL = require("url-parse")
 var getUrls = require("get-urls");
 var isoHelp = require("iso8601-duration");
 var YouTube = require("youtube-node");
-//TODO
-/*
-    run as service
-    add tests
-    make robust
-    get own api key
-    add better readme
-    !imdb command
-    ???
-    profit
-*/
 var youtube = new YouTube();
 
 youtube.setKey("AIzaSyB1OOSpTREs85WUMvIgJvLTZKye4BVsoFU");
