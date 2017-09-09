@@ -1,0 +1,1 @@
+An IRC Bot for playing around
