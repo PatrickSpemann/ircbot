@@ -1,4 +1,4 @@
-var URL = require("url-parse")
+var URL = require("url-parse");
 var YouTube = require("youtube-node");
 var utils = require("./ircbot-utils");
 

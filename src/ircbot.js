@@ -1,8 +1,9 @@
 var IRC = require("irc");
 var getUrls = require("get-urls");
 
-var youtubeResolve = require("./youtubeResolve");
 var handleCommand = require("./handleCommand");
+var imdbResolve = require("./imdbResolve");
+var youtubeResolve = require("./youtubeResolve");
 
 const networkUrl = "irc.quakenet.org";
 const nickname = "MystBot";
@@ -30,8 +31,10 @@ function onMessage(userName, channel, message) {
     if (handleCommand(clientInfo, message))
         return;
     var urls = getUrls(message);
-    for (var url of urls)
+    for (var url of urls) {
+        imdbResolve(clientInfo, url);
         youtubeResolve(clientInfo, url);
+    }
 }
 function onError(message) {
     console.log("IRC Error: " + message);
