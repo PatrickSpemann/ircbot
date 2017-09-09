@@ -1,16 +1,16 @@
 var irc = require("irc");
 var URL = require("url-parse")
 var getUrls = require("get-urls");
+var isoHelp = require("iso8601-duration");
 var YouTube = require("youtube-node");
 //TODO
 /*
-    accept youtu.be urls
-    format output properly
     run as service
     add tests
     make robust
     get own api key
     add better readme
+    !imdb command
     ???
     profit
 */
@@ -20,56 +20,79 @@ youtube.setKey("AIzaSyB1OOSpTREs85WUMvIgJvLTZKye4BVsoFU");
 
 const networkUrl = "irc.quakenet.org";
 const nickname = "MystBot";
-const channel = "#barakthul";
+const channels = ["#barakthul"];
 
 var client = new irc.Client(networkUrl, nickname, {
-    channels: [channel]
+    channels: channels
 });
 
 client.addListener("message", onMessage);
 
-function onMessage(from, to, message) {
+function onMessage(userName, channel, message) {
+    _channel = channel;
+    if (message.toLowerCase().indexOf("!imdb") === 0)
+        client.say(_channel, "coming soon!");
+    if (message.toLowerCase().indexOf("!uman") === 0)
+        client.say(_channel, "?");
     var urls = getUrls(message);
     for (var url of urls) {
-        var urlObject = new URL(url);
-        if (isYoutubeUrl(urlObject))
-            handleYoutubeUrl(urlObject);
+        var videoId = getVideoId(new URL(url));
+        if (videoId)
+            youtube.getById(videoId, onYoutubeResult);
     }
 }
-function isYoutubeUrl(urlObject) {
-    if (urlObject.hostname === "youtube.com")
-        return true;
-    return false;
-}
-function handleYoutubeUrl(urlObject) {
-    var videoId = getVideoId(urlObject.query);
-    if (videoId) {
-        youtube.getById(videoId, onYoutubeResult);
+function getVideoId(urlObject) {
+    switch (urlObject.hostname) {
+        case "youtu.be":
+            return getVideoIdFromBE(urlObject);
+        case "youtube.com":
+            return getVideoIdFromCOM(urlObject);
+        default:
+            return undefined;
     }
 }
-function getVideoId(urlQuery) {
-    var withoutQuestionMark = urlQuery.substring(1);
+function getVideoIdFromBE(urlObject) {
+    var withoutSlash = urlObject.pathname.substring(1);
+    return withoutSlash;
+}
+function getVideoIdFromCOM(urlObject) {
+    var withoutQuestionMark = urlObject.query.substring(1);
     var pairs = withoutQuestionMark.split("&");
     for (var i = 0; i < pairs.length; i++) {
-        var tmp = pairs[i].split("=");
-        var paramName = tmp[0];
-        if (paramName === "v")
-            return tmp[1];
+        var pair = pairs[i].split("=");
+        if (pair.length === 2 && pair[0] === "v")
+            return pair[1];
     }
     return undefined;
 }
 function onYoutubeResult(error, result) {
     if (error)
         console.log(error);
-    else
-        processYoutubeResults(result.items);
-}
-function processYoutubeResults(youtubeResults) {
-    for (var i = 0; i < youtubeResults.length; i++)
-        processYoutubeResult(youtubeResults[i]);
+    else if (result && result.items)
+        for (var i = 0; i < result.items.length; i++)
+            processYoutubeResult(result.items[i]);
 }
 function processYoutubeResult(youtubeResult) {
-    var title = youtubeResult.snippet.title;
-    var durationString = youtubeResult.contentDetails.duration;
-    client.say(channel, "title: " + title + " duration: " + durationString);
+    try {
+        var title = youtubeResult.snippet.title;
+        var durationString = formatDuration(youtubeResult.contentDetails.duration);
+        client.say(_channel, title + " [" + durationString + "]");
+
+    }
+    catch (error) {
+        console.log(error);
+    }
+}
+function formatDuration(durationString) {
+    var durationObj = isoHelp.parse(durationString);
+    var hh = pad(durationObj.hours);
+    var mm = pad(durationObj.minutes);
+    var ss = pad(durationObj.seconds);
+    if (hh === "00")
+        return mm + ":" + ss;
+    return hh + ":" + mm + ":" + ss;
+}
+function pad(numAsString) {
+    var num = parseInt(numAsString);
+    return num >= 10 ? num : "0" + num;
 }
