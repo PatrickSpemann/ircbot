@@ -18,7 +18,7 @@
   "homepage": "https://github.com/PatrickSpemann/ircbot#readme",
   "dependencies": {
     "get-urls": "^7.0.0",
-    "imdb": "^1.1.0",
+    "imdb": "git://github.com/PatrickSpemann/imdb.git#master",
     "irc": "^0.5.2",
     "iso8601-duration": "^1.0.6",
     "url-parse": "^1.1.9",
