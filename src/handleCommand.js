@@ -1,4 +1,5 @@
 var utils = require("./ircbot-utils");
+var imdbSearch = require("./imdbSearch");
 var _clientInfo = undefined;
 
 module.exports = function (clientInfo, message) {
@@ -12,15 +13,15 @@ function handleCommand(message) {
         case "help":
         case "commands":
             sendHelp();
-            break;
+            return true;
         case "imdb":
-            sendImdbInfo(message);
-            break;
+            imdbSearch(_clientInfo, parameters);
+            return true;
         case "uman":
             _clientInfo.client.say(_clientInfo.channel, "?");
-            break;
+            return true;
         default:
-            break;
+            return false;
     }
 }
 function sendHelp() {

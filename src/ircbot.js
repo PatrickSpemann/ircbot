@@ -23,6 +23,8 @@ module.exports.start = function () {
     _client.addListener("error", onError);
 };
 function onMessage(userName, channel, message) {
+    if (userName === nickname)
+        return;
     var clientInfo = {
         client: _client,
         userName: userName,

@@ -7,6 +7,5 @@ TODOs
 * make robust
 * get own api key
 * add better readme
-* !imdb command
 * ???
 * profit
