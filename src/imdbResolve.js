@@ -27,7 +27,7 @@ function onImdbResult(error, result) {
         processImdbResult(result);
 }
 function processImdbResult(result) {
-    var title = result.originaltitle;
+    var title = result.originalTitle;
     var year = result.year;
     var rating = result.rating;
     _clientInfo.client.say(_clientInfo.channel, title + " (" + year + ") Rating: " + rating);
