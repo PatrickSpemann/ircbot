@@ -9,17 +9,23 @@ function getRangeFromInput(rangeAsString) {
         max: 20
     }
     rangeAsString = rangeAsString.replace(/ /g, "").trim();
+    var num = parseInt(rangeAsString);
+    if (numOk(num))
+        result.max = num;
     var parts = rangeAsString.split("-");
-    if (parts.length !== 2)
-        return result;
-    var min = parseInt(parts[0]);
-    var max = parseInt(parts[1]);
-    if (isNaN(min) || isNaN(max) || !isFinite(min) || !isFinite(max))
-        return result;
-    result.min = min;
-    result.max = max;
+    if (parts.length === 2) {
+        var min = parseInt(parts[0]);
+        var max = parseInt(parts[1]);
+        if (numOk(min) && numOk(max)) {
+            result.min = min;
+            result.max = max;
+        }
+    }
     return result;
 }
 function getRandomInteger(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+function numOk(num) {
+    return !isNaN(num) && isFinite(num);
 }
