@@ -1,5 +1,6 @@
 var utils = require("./ircbot-utils");
 var imdbSearch = require("./imdbSearch");
+var youtubeSearch = require("./youtubeSearch");
 var _clientInfo = undefined;
 
 module.exports = function (clientInfo, message) {
@@ -16,6 +17,9 @@ function handleCommand(message) {
             return true;
         case "imdb":
             imdbSearch(_clientInfo, parameters);
+            return true;
+        case "youtube":
+            youtubeSearch(_clientInfo, parameters);
             return true;
         case "uman":
             _clientInfo.client.say(_clientInfo.channel, "?");
