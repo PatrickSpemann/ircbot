@@ -1,6 +1,7 @@
 var utils = require("./ircbot-utils");
 var imdbSearch = require("./imdbSearch");
 var youtubeSearch = require("./youtubeSearch");
+var roll = require("./roll");
 var _clientInfo = undefined;
 
 module.exports = function (clientInfo, message) {
@@ -21,6 +22,9 @@ function handleCommand(message) {
         case "youtube":
             youtubeSearch(_clientInfo, parameters);
             return true;
+        case "roll":
+            roll(_clientInfo, parameters);
+            return true;
         case "uman":
             _clientInfo.client.say(_clientInfo.channel, "?");
             return true;
@@ -32,6 +36,8 @@ function sendHelp() {
     var helpString = "Available commands:\n";
     helpString += "!help or !commands: show this help\n";
     helpString += "!imdb: search imdb for movies. Example usage: !imdb back to the future\n";
+    helpString += "!imdb: search youtube for videos. Example usage: !youtube amazing horse\n";
+    helpString += "!roll: generates random integer in given range. Example usage: !roll 1-10. Default: 1-20\n";
     helpString += "!uman: ?";
     var lines = helpString.split("\n");
     for (var i = 0; i < lines.length; i++)
