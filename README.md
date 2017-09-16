@@ -1,11 +1,13 @@
 An IRC Bot for playing around
 
+## Run
+```
+npm install
+node index.js
+```
+
+
 TODOs
 
 * run as service
-* add tests
-* make robust
-* get own api key
-* add better readme
-* ???
-* profit
+* get own youtube api key
