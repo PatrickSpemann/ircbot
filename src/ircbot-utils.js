@@ -1,16 +1,13 @@
 var isoHelp = require("iso8601-duration");
+var pad = require("pad");
 module.exports.formatDuration = function (durationString) {
     var durationObj = isoHelp.parse(durationString);
-    var hh = module.exports.pad(durationObj.hours);
-    var mm = module.exports.pad(durationObj.minutes);
-    var ss = module.exports.pad(durationObj.seconds);
+    var hh = pad(2, durationObj.hours, "0");
+    var mm = pad(2, durationObj.minutes, "0");
+    var ss = pad(2, durationObj.seconds, "0");
     if (hh === "00")
         return mm + ":" + ss;
     return hh + ":" + mm + ":" + ss;
-};
-module.exports.pad = function (numAsString) {
-    var num = parseInt(numAsString);
-    return num >= 10 ? num : "0" + num;
 };
 module.exports.extractCommand = function (message) {
     if (message.indexOf("!") !== 0)

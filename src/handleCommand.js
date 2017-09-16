@@ -48,6 +48,3 @@ function sendHelp() {
     for (var i = 0; i < lines.length; i++)
         _clientInfo.client.notice(_clientInfo.userName, lines[i]);
 }
-function sendImdbInfo(message) {
-    _clientInfo.client.say(_clientInfo.channel, "coming soon!");
-}
