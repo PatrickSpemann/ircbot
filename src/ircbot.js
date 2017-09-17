@@ -6,21 +6,18 @@ var handleAdminCommand = require("./handleAdminCommand");
 var imdbResolve = require("./imdbResolve");
 var youtubeResolve = require("./youtubeResolve");
 
-const networkUrl = "irc.quakenet.org";
-const nickname = "MystBot";
-const channels = ["#barakthul"];
-const adminHosts = ["Mysterion.users.quakenet.org"];
-
 var _client = undefined;
 var lastPm = undefined;
+var _options = undefined;
 
-module.exports.start = function () {
-    _client = new IRC.Client(networkUrl, nickname, {
-        channels: channels,
+module.exports.start = function (options) {
+    _options = options;
+    _client = new IRC.Client(options.networkUrl, options.nickname, {
+        channels: options.channels,
         floodProtection: true,
         stripColors: true,
-        userName: nickname,
-        realName: nickname
+        userName: options.nickname,
+        realName: options.nickname
     });
     _client.addListener("pm", onPm);
     _client.addListener("message#", onMessage);
@@ -31,12 +28,12 @@ function onPm(userName, message) {
     _client.whois(userName, onWhoisResult);
 }
 function onWhoisResult(info) {
-    if (adminHosts.indexOf(info.host) !== -1)
+    if (_options.adminHosts.indexOf(info.host) !== -1)
         handleAdminCommand(_client, lastPm);
     lastPm = undefined;
 }
 function onMessage(userName, channel, message) {
-    if (userName === nickname)
+    if (userName === _options.nickname)
         return;
     var clientInfo = {
         client: _client,
