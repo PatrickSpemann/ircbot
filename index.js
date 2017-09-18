@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env nodejs
 var ircbot = require("./src/ircbot");
 var fs = require("fs");
 
