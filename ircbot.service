@@ -1,0 +1,14 @@
+[Unit]
+Description=ircbot
+
+[Service]
+ExecStart=/home/testuser1/git/ircbot/index.js
+Restart=always
+User=nobody
+Group=nobody
+Environment=PATH=/usr/bin:/usr/local/bin
+Environment=NODE_ENV=production
+WorkingDirectory=/home/testuser1/git/ircbot
+
+[Install]
+WantedBy=multi-user.target
