@@ -38,7 +38,7 @@ function handleCommand(message) {
 }
 function sendHelp() {
     var helpString = "Available commands:\n";
-    helpString += "!help or !commands: show this help\n";
+    helpString += "!help or !commands: Show this help\n";
     helpString += "!imdb: search imdb for movies. Example usage: !imdb back to the future\n";
     helpString += "!youtube: search youtube for videos. Example usage: !youtube amazing horse\n";
     helpString += "!roll: generates random integer in given range. Example usage: !roll 1-10. Default: 1-20\n";
