@@ -18,7 +18,7 @@ function handleCommand(message) {
         case "say":
             var firstSpace = parameters.indexOf(" ");
             var target = parameters.substring(0, firstSpace);
-            var message = parameters.substring(firstSpace);
+            var message = parameters.substring(firstSpace + 1);
             _client.say(target, message);
             break;
         case "nick":
