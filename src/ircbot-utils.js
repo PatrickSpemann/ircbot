@@ -22,3 +22,10 @@ module.exports.extractParameters = function (message) {
         return "";
     return message.substring(spaceIndex + 1);
 };
+module.exports.convertKeysToArray = function (object) {
+    var result = [];
+    for (var key in object)
+        if (object.hasOwnProperty(key))
+            result.push(key);
+    return result;
+}

@@ -3,6 +3,7 @@ var imdbSearch = require("./imdbSearch");
 var youtubeSearch = require("./youtubeSearch");
 var eightball = require("./eightball.js");
 var roll = require("./roll");
+var seen = require("./seen");
 var _clientInfo = undefined;
 
 module.exports = function (clientInfo, message) {
@@ -28,6 +29,9 @@ function handleCommand(message) {
             return true;
         case "8ball":
             eightball(_clientInfo, parameters);
+            return true;
+        case "seen":
+            seen.get(_clientInfo, parameters);
             return true;
         case "uman":
             _clientInfo.client.say(_clientInfo.channel, "?");
