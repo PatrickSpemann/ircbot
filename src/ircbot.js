@@ -5,6 +5,8 @@ var handleCommand = require("./handleCommand");
 var handleAdminCommand = require("./handleAdminCommand");
 var imdbResolve = require("./imdbResolve");
 var youtubeResolve = require("./youtubeResolve");
+var seen = require("./seen");
+var seenState = require("./seenState");
 
 var _client = undefined;
 var lastPm = undefined;
@@ -21,6 +23,12 @@ module.exports.start = function (options) {
     });
     _client.addListener("pm", onPm);
     _client.addListener("message#", onMessage);
+    _client.addListener("names", seen.onNames);
+    _client.addListener("part", seenState.onPart);
+    _client.addListener("quit", seenState.onQuit);
+    _client.addListener("kick", seenState.onKick);
+    _client.addListener("kill", seenState.onKill);
+    _client.addListener("nick", seenState.onNick);
     _client.addListener("error", onError);
 };
 function onPm(userName, message) {

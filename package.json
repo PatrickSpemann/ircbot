@@ -18,6 +18,7 @@
   "homepage": "https://github.com/PatrickSpemann/ircbot#readme",
   "dependencies": {
     "chance": "^1.0.11",
+    "duration": "^0.2.0",
     "get-urls": "^7.0.0",
     "imdb": "git://github.com/PatrickSpemann/imdb.git#master",
     "irc": "^0.5.2",
