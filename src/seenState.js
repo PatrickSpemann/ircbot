@@ -1,10 +1,5 @@
 module.exports = {
     state: [
-        {
-            name: "test",
-            channel: "#mystdev",
-            date: new Date()
-        }
     ],
     addOrUpdate: addOrUpdate,
     onPart: onPart,
