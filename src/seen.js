@@ -13,7 +13,7 @@ module.exports = {
 
 function get(clientInfo, name) {
     _clientInfo = clientInfo;
-    _requestedName = name.toLowerCase();
+    _requestedName = name.toLowerCase().trim();
     if (_requestedName.length < 3) {
         _clientInfo.client.notice(_clientInfo.userName, "Names must have at least 3 characters!");
         return;
