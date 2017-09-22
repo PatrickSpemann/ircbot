@@ -47,6 +47,7 @@ function sendHelp() {
     helpString += "!youtube: search youtube for videos. Example usage: !youtube amazing horse\n";
     helpString += "!roll: generates random integer in given range. Example usage: !roll 1-10. Default: 1-20\n";
     helpString += "!8ball: will answer any yes/no question. Example usage: !8ball Am I a good person?\n";
+    helpString += "!seen: checks when the given user was last seen in the channel. Example usage: !seen Kenny\n";
     helpString += "!uman: ?";
     var lines = helpString.split("\n");
     for (var i = 0; i < lines.length; i++)
