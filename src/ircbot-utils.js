@@ -29,8 +29,5 @@ module.exports = {
             if (object.hasOwnProperty(key))
                 result.push(key);
         return result;
-    },
-    countSubStringInString: function (string, substring) {
-        return (string.match(new RegExp(substring, "g")) || []).length;
     }
 };
