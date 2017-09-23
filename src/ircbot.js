@@ -7,6 +7,7 @@ var imdbResolve = require("./imdbResolve");
 var youtubeResolve = require("./youtubeResolve");
 var seen = require("./seen");
 var seenState = require("./seenState");
+var directResponse = require("./directResponse");
 
 var _client = undefined;
 var lastPm = undefined;
@@ -48,6 +49,8 @@ function onMessage(userName, channel, message) {
         userName: userName,
         channel: channel
     };
+    if (directResponse(clientInfo, message))
+        return;
     if (handleCommand(clientInfo, message))
         return;
     var urls = getUrls(message);
