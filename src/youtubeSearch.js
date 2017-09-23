@@ -26,6 +26,7 @@ function onYoutubeResult(error, result) {
 }
 function processYoutubeResult(youtubeResult) {
     var title = youtubeResult.snippet.title;
+    var channelTitle = youtubeResult.snippet.channelTitle;
     var durationString = utils.formatDuration(youtubeResult.contentDetails.duration);
-    _clientInfo.client.say(_clientInfo.channel, title + " [" + durationString + "] https://www.youtube.com/watch?v=" + youtubeResult.id);
+    _clientInfo.client.say(_clientInfo.channel, channelTitle + ": " + title + " [" + durationString + "] https://www.youtube.com/watch?v=" + youtubeResult.id);
 }
