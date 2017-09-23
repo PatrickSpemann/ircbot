@@ -28,4 +28,7 @@ module.exports.convertKeysToArray = function (object) {
         if (object.hasOwnProperty(key))
             result.push(key);
     return result;
-}
+};
+module.exports.countSubStringInString = function (string, substring) {
+    return string.match(new RegExp(substring, "g") || []).length;
+};
