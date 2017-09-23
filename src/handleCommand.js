@@ -21,6 +21,7 @@ function handleCommand(message) {
         case "imdb":
             imdbSearch(_clientInfo, parameters);
             return true;
+        case "y":
         case "youtube":
             youtubeSearch(_clientInfo, parameters);
             return true;
@@ -44,7 +45,7 @@ function sendHelp() {
     var helpString = "Available commands:\n";
     helpString += "!help or !commands: Show this help\n";
     helpString += "!imdb: search imdb for movies. Example usage: !imdb back to the future\n";
-    helpString += "!youtube: search youtube for videos. Example usage: !youtube amazing horse\n";
+    helpString += "!y or !youtube: search youtube for videos. Example usage: !youtube amazing horse\n";
     helpString += "!roll: generates random integer in given range. Example usage: !roll 1-10. Default: 1-20\n";
     helpString += "!8ball: will answer any yes/no question. Example usage: !8ball Am I a good person?\n";
     helpString += "!seen: checks when the given user was last seen in the channel. Example usage: !seen Kenny\n";
