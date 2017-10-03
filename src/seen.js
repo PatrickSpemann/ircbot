@@ -46,13 +46,14 @@ function getFromNames(channel, names) {
     return index !== -1 ? { name: nameArray[index] } : undefined;
 }
 function getFromState() {
-    var names = SeenState.state.filter(function (item) {
+    var state = SeenState.getState();
+    var names = state.filter(function (item) {
         return item.channel === _clientInfo.channel;
     }).map(function (item) {
         return item.name;
     });
     var index = getBestMatchingIndex(names, _requestedName);
-    return index !== -1 ? SeenState.state[index] : undefined;
+    return index !== -1 ? state[index] : undefined;
 }
 function getBestMatchingIndex(names, name) {
     var firstPartMatchIndex = -1;
@@ -66,6 +67,8 @@ function getBestMatchingIndex(names, name) {
     return firstPartMatchIndex;
 }
 function formatDuration(date) {
+    if (!(date instanceof Date))
+        date = new Date(date);
     var now = new Date();
     var duration = new Duration(date, now); //old date must be first or the duration will be negative
     return duration.toString(1, 1);

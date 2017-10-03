@@ -25,11 +25,7 @@ module.exports.start = function (options) {
     _client.addListener("pm", onPm);
     _client.addListener("message#", onMessage);
     _client.addListener("names", seen.onNames);
-    _client.addListener("part", seenState.onPart);
-    _client.addListener("quit", seenState.onQuit);
-    _client.addListener("kick", seenState.onKick);
-    _client.addListener("kill", seenState.onKill);
-    _client.addListener("nick", seenState.onNick);
+    seenState.registerEvents(_client);
     _client.addListener("error", onError);
 };
 function onPm(userName, message) {
