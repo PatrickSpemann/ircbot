@@ -15,7 +15,7 @@ module.exports = {
             return undefined;
         var spaceIndex = message.indexOf(" ");
         var end = spaceIndex === -1 ? undefined : spaceIndex;
-        return message.substring(1, end);
+        return message.substring(1, end).toLowerCase();
     },
     extractParameters: function (message) {
         var spaceIndex = message.indexOf(" ");

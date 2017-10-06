@@ -5,6 +5,7 @@ var handleCommand = require("./handleCommand");
 var handleAdminCommand = require("./handleAdminCommand");
 var imdbResolve = require("./imdbResolve");
 var youtubeResolve = require("./youtubeResolve");
+var genericResolve = require("./genericResolve");
 var seen = require("./seen");
 var seenState = require("./seenState");
 var directResponse = require("./directResponse");
@@ -50,10 +51,14 @@ function onMessage(userName, channel, message) {
     if (handleCommand(clientInfo, message))
         return;
     var urls = getUrls(message);
-    for (var url of urls) {
-        imdbResolve(clientInfo, url);
-        youtubeResolve(clientInfo, url);
-    }
+    for (var url of urls)
+        resolveUrl(clientInfo, url);
+}
+function resolveUrl(clientInfo, url) {
+    var resolvers = [imdbResolve, youtubeResolve, genericResolve]; //order is important!
+    for (var i = 0; i < resolvers.length; i++)
+        if (resolvers[i](clientInfo, url))
+            return;
 }
 function onError(message) {
     console.log("IRC Error: " + message);
