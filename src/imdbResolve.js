@@ -9,6 +9,7 @@ module.exports = function (clientInfo, url) {
     var imdbId = getImdbId(new URL(url));
     if (imdbId)
         IMDB(imdbId, onImdbResult);
+    return imdbId;
 }
 function getImdbId(urlObject) {
     if (urlObject.hostname !== "imdb.com")

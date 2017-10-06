@@ -12,6 +12,7 @@ module.exports = function (clientInfo, url) {
     var videoId = getVideoId(new URL(url));
     if (videoId)
         youtube.getById(videoId, onYoutubeResult);
+    return videoId;
 }
 function getVideoId(urlObject) {
     switch (urlObject.hostname) {
