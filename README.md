@@ -22,7 +22,7 @@ This file must contain all the properties and data types as this example:
 }
 ```
 ## Features
-* Resolves links to YouTube/IMDB/Twitch, posting relevant information about the video/movie
+* Resolves links to websites, posting relevant information to the channel
 * For a list of user commands type ```!help``` in a channel where the bot is present
 
 ## Remote Control
