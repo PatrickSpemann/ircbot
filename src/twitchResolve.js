@@ -35,7 +35,7 @@ function onTwitchResponse(error, response, body) {
                 var stream = json.data[0];
                 var title = stream.title;
                 var viewers = stream.viewer_count;
-                var message = _twitchChannel + ": " + title + " [" + viewers + "]";
+                var message = title + " [" + viewers + "]";
 
                 var gameName = _gameMap[stream.game_id];
                 if (gameName) {
