@@ -41,7 +41,7 @@ function onTwitchResponse(error, response, body) {
                 if (gameName) {
                     message += " [" + gameName + "]"
                 }
-                _clientInfo.client.say(_clientInfo.channel, _twitchChannel + ": " + title + " [" + viewers + "]" + " [" + gameName + "]");
+                _clientInfo.client.say(_clientInfo.channel, message);
             }
         }
         catch (e) {
