@@ -3,7 +3,7 @@ var URL = require("url-parse");
 
 var _clientInfo = undefined;
 var _twitchChannel = undefined;
-var _headers = {"Client-ID": "mmq1seoi7p2atbsuvap7vzr1spwx9i"}
+var _headers = { "Client-ID": "mmq1seoi7p2atbsuvap7vzr1spwx9i" }
 
 module.exports = function (clientInfo, url) {
     _clientInfo = clientInfo;
@@ -49,15 +49,15 @@ function onTwitchResponse(error, response, body) {
     }
 }
 
-const _gameMap = {};
+var _gameMap = {};
 setGames(_gameMap);
 
 function setGames(gameMap) {
     return request({
         url: "https://api.twitch.tv/kraken/games/top?limit=100",
         headers: _headers
-    }, function(error, response, body) {
-        let topGames = JSON.parse(body);
+    }, function (error, response, body) {
+        var topGames = JSON.parse(body);
         topGames.top.forEach(entry => gameMap[entry.game._id] = entry.game.name);
     })
 }
