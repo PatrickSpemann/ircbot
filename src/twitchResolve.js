@@ -3,7 +3,7 @@ var URL = require("url-parse");
 
 var _clientInfo = undefined;
 var _twitchChannel = undefined;
-var headers = {"Client-ID": "mmq1seoi7p2atbsuvap7vzr1spwx9i"}
+var _headers = {"Client-ID": "mmq1seoi7p2atbsuvap7vzr1spwx9i"}
 
 module.exports = function (clientInfo, url) {
     _clientInfo = clientInfo;
@@ -24,7 +24,7 @@ function getTwitchChannel(urlObject) {
 function makeApiCall(channel) {
     request({
         url: "https://api.twitch.tv/helix/streams?user_login=" + channel,
-        headers: headers
+        headers: _headers
     }, onTwitchResponse);
 }
 function onTwitchResponse(error, response, body) {
@@ -35,7 +35,12 @@ function onTwitchResponse(error, response, body) {
                 var stream = json.data[0];
                 var title = stream.title;
                 var viewers = stream.viewer_count;
-                var gameName = gameMap[stream.game_id]
+                var message = _twitchChannel + ": " + title + " [" + viewers + "]";
+
+                var gameName = _gameMap[stream.game_id];
+                if (gameName) {
+                    message += " [" + gameName + "]"
+                }
                 _clientInfo.client.say(_clientInfo.channel, _twitchChannel + ": " + title + " [" + viewers + "]" + " [" + gameName + "]");
             }
         }
@@ -44,14 +49,14 @@ function onTwitchResponse(error, response, body) {
     }
 }
 
-const gameMap = {};
-setGames(gameMap)
+const _gameMap = {};
+setGames(_gameMap);
 
 function setGames(gameMap) {
     return request({
         url: "https://api.twitch.tv/kraken/games/top?limit=100",
-        headers: headers
-    }, function(error, response, body){
+        headers: _headers
+    }, function(error, response, body) {
         let topGames = JSON.parse(body);
         topGames.top.forEach(entry => gameMap[entry.game._id] = entry.game.name);
     })
