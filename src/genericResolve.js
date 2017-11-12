@@ -4,6 +4,7 @@ var URL = require("url-parse");
 
 var _clientInfo = undefined;
 var _lastUrl = undefined;
+const _maxTitleLength = 400;
 
 module.exports = function (clientInfo, url) {
     _clientInfo = clientInfo;
@@ -17,6 +18,8 @@ function requestResponse(error, response, body) {
     body = body.replace(/(\r\n|\n|\r)/gm, '').replace(/ +(?= )/g, '')
     $ = cheerio.load(body);
     var title = $("title").text().trim();
+    if (title.length > _maxTitleLength)
+        title = title.substring(0, _maxTitleLength) + "...";
     if (_lastUrl && _lastUrl.hostname.indexOf(title.toLowerCase()) === -1)
         _clientInfo.client.say(_clientInfo.channel, "Title: " + title);
 }
