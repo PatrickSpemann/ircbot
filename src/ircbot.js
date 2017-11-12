@@ -20,6 +20,7 @@ module.exports.start = function (options) {
     _client = new IRC.Client(options.networkUrl, options.nickname, {
         channels: options.channels,
         floodProtection: true,
+        floodProtectionDelay: 5000,
         stripColors: true,
         userName: options.nickname,
         realName: options.nickname
