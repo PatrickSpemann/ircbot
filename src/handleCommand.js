@@ -1,6 +1,7 @@
 var utils = require("./ircbot-utils");
 var imdbSearch = require("./imdbSearch");
 var youtubeSearch = require("./youtubeSearch");
+var poeSearch = require("./poeSearch");
 var eightball = require("./eightball.js");
 var roll = require("./roll");
 var seen = require("./seen");
@@ -24,6 +25,10 @@ function handleCommand(message) {
         case "y":
         case "youtube":
             youtubeSearch(_clientInfo, parameters);
+            return true;
+        case "p":
+        case "poe":
+            poeSearch(_clientInfo, parameters);
             return true;
         case "roll":
             roll(_clientInfo, parameters);
@@ -49,6 +54,7 @@ function sendHelp() {
     helpString += "!roll: generates random integer in given range. Example usage: !roll 1-10. Default: 1-20\n";
     helpString += "!8ball: will answer any yes/no question. Example usage: !8ball Am I a good person?\n";
     helpString += "!seen: checks when the given user was last seen in the channel. Example usage: !seen Kenny\n";
+    helpString += "!p or !poe: search the Path of Exile wiki for articles. Example usage: !p zana\n";
     helpString += "!uman: ?";
     var lines = helpString.split("\n");
     for (var i = 0; i < lines.length; i++)
