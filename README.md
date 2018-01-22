@@ -39,6 +39,5 @@ Your host must be listed under ```adminHosts``` in the ```settings.json```.
 ```
 
 ## TODOs
-* get own youtube api key
 * Fix async (members)
 * prevent spam by adding cache of last sent messages
