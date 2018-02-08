@@ -24,8 +24,7 @@ function handleCommand(message) {
 function executeCommand(command, parameters) {
     switch (command) {
         case "help":
-        case "commands":
-            sendHelp();
+            _clientInfo.client.say(_clientInfo.channel, "https://github.com/PatrickSpemann/ircbot/tree/master/docs");
             return "help";
         case "imdb":
             imdbSearch(_clientInfo, parameters);
@@ -64,21 +63,4 @@ function executeCommand(command, parameters) {
         default:
             return "";
     }
-}
-function sendHelp() {
-    var helpString = "Available commands:\n";
-    helpString += "!help or !commands: Show this help\n";
-    helpString += "!imdb: search imdb for movies. Example usage: !imdb back to the future\n";
-    helpString += "!y or !youtube: search youtube for videos. Example usage: !youtube amazing horse\n";
-    helpString += "!roll: generates random integer in given range. Example usage: !roll 1-10. Default: 1-20\n";
-    helpString += "!8ball: will answer any yes/no question. Example usage: !8ball Am I a good person?\n";
-    helpString += "!seen: checks when the given user was last seen in the channel. Example usage: !seen Kenny\n";
-    helpString += "!p or !poe: search the Path of Exile wiki for articles. Example usage: !p zana\n";
-    helpString += "!g or !google: search the web with google. Example usage: !g twitter\n";
-    helpString += "!i or !img: search google images. Example usage: !i golden gate bridge\n";
-    helpString += "!stats: print the some statistics about the used commands."
-    helpString += "!uman: ?";
-    var lines = helpString.split("\n");
-    for (var i = 0; i < lines.length; i++)
-        _clientInfo.client.notice(_clientInfo.userName, lines[i]);
 }
