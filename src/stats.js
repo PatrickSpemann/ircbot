@@ -5,76 +5,68 @@ const statsFilePath = "./stats.json";
 module.exports = {
     registerCommand: function (_clientInfo, command, parameters) {
         var statsObject = getStatsFromFile();
-
-        if (!statsObject.commands[command])
-            statsObject.commands[command] = [];
-
-        statsObject.commands[command].push({
-            name: _clientInfo.userName,
-            params: parameters
+        statsObject.commands.push({
+            command: command,
+            params: parameters,
+            user: _clientInfo.userName,
+            date: new Date()
         })
-
         writeStatsToFile(statsObject);
     },
     getTop: function (_clientInfo, parameters) {
-        //TODO HOLY SHIT THIS IS UGLY
         var statsObject = getStatsFromFile();
 
-        var maxUsedCommand = "";
-        var maxCommandCount = 0;
-        for (var command in statsObject.commands) {
-            if (statsObject.commands[command].length > maxCommandCount) {
-                maxUsedCommand = command;
-                maxCommandCount = statsObject.commands[command].length
-            }
-        }
+        var commands = statsObject.commands.map(function (e) {
+            return e.command;
+        });
+        var topCommandObj = getMaxOfArray(commands);
 
-        var counters = {
-            params: {},
-            names: {}
-        };
-        var list = statsObject.commands[maxUsedCommand];
-        for (var i = 0; i < list.length; i++) {
-            var listObj = list[i];
+        var paramsForCommand = statsObject.commands.filter(function (e) {
+            return e.command === topCommandObj.elem;
+        }).map(function (e) {
+            return e.params;
+        });
+        var topParamForCommand = getMaxOfArray(paramsForCommand);
 
-            if (!counters.params[listObj.params])
-                counters.params[listObj.params] = 0;
-            counters.params[listObj.params]++;
+        var usersForCommandAndParam = statsObject.commands.filter(function (e) {
+            return e.command === topCommandObj.elem && e.params === topParamForCommand.elem;
+        }).map(function (e) {
+            return e.user;
+        });
+        var topUserForCommandAndParam = getMaxOfArray(usersForCommandAndParam);
 
-            if (!counters.names[listObj.name])
-                counters.names[listObj.name] = 0;
-            counters.names[listObj.name]++;
-        }
-
-        var maxParameter = "";
-        var maxParameterCount = 0;
-        for (var param in counters.params) {
-            if (counters.params[param] > maxParameterCount) {
-                maxParameterCount = counters.params[param];
-                maxParameter = param;
-            }
-        }
-
-        var maxUser = "";
-        var maxUserCount = 0;
-        for (var name in counters.names) {
-            if (counters.names[name] > maxUserCount) {
-                maxUserCount = counters.names[name];
-                maxUser = name;
-            }
-        }
-
-        var result = "Top command: !" + maxUsedCommand + " " + maxParameter + " (Count: " + maxCommandCount + " User: " + maxUser + ")";
+        var result = "Top command: !" + topCommandObj.elem + " " + topParamForCommand.elem + " (Count: " + topParamForCommand.count + " User: " + topUserForCommandAndParam.elem + "[" + topUserForCommandAndParam.count + "])";
         _clientInfo.client.say(_clientInfo.channel, result);
     }
 };
+
+function getMaxOfArray(array) {
+    var max = {
+        count: 0,
+        elem: null
+    };
+    var counters = {};
+    for (var i = 0; i < array.length; i++) {
+        var elem = array[i];
+
+        if (!counters[elem])
+            counters[elem] = 0;
+        counters[elem]++;
+
+        if (counters[elem] > max.count) {
+            max.count = counters[elem];
+            max.elem = elem;
+        }
+    }
+    return max;
+}
 
 function getStatsFromFile() {
     try {
         return fs.readJsonSync(statsFilePath);
     }
     catch (e) {
-        return { commands: {} };
+        return { commands: [] };
     }
 }
 function writeStatsToFile(statsObject) {
