@@ -50,7 +50,7 @@ function onMessage(userName, channel, message) {
     };
     if (directResponse(clientInfo, message))
         return;
-    if (handleCommand(clientInfo, message))
+    if (handleCommand(clientInfo, message, _options))
         return;
     var urls = getUrls(message);
     for (var url of urls)

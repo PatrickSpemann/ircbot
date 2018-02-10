@@ -23,9 +23,11 @@ This file must contain all the properties and data types as this example:
     ],
     "adminHosts": [
         "botAdmin.users.quakenet.org"
-    ]
+    ],
+    "statsResponse": "https://mywebsite.com/stats.json"
 }
 ```
+`statsResponse` is optional and if present, will be sent to the channel when a user types `!stats`
 
 ## TODOs
 * Fix async (members)

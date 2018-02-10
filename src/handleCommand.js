@@ -8,9 +8,11 @@ var stats = require("./stats");
 var roll = require("./roll");
 var seen = require("./seen");
 var _clientInfo = undefined;
+var _options = undefined;
 
-module.exports = function (clientInfo, message) {
+module.exports = function (clientInfo, message, options) {
     _clientInfo = clientInfo;
+    _options = options;
     handleCommand(message);
 };
 function handleCommand(message) {
@@ -26,6 +28,10 @@ function executeCommand(command, parameters) {
         case "help":
             _clientInfo.client.say(_clientInfo.channel, "https://github.com/PatrickSpemann/ircbot/tree/master/docs");
             return "help";
+        case "stats":
+            if (_options.statsResponse)
+                _clientInfo.client.say(_clientInfo.channel, _options.statsResponse);
+            return "stats";
         case "imdb":
             imdbSearch(_clientInfo, parameters);
             return "imdb";
