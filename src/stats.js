@@ -19,23 +19,21 @@ module.exports = {
         var commands = statsObject.commands.map(function (e) {
             return e.command;
         });
-        var topCommandObj = getMaxOfArray(commands);
+        var topCommand = getMaxOfArray(commands);
 
         var paramsForCommand = statsObject.commands.filter(function (e) {
-            return e.command === topCommandObj.elem;
+            return e.command === topCommand.elem;
         }).map(function (e) {
             return e.params;
         });
         var topParamForCommand = getMaxOfArray(paramsForCommand);
 
-        var usersForCommandAndParam = statsObject.commands.filter(function (e) {
-            return e.command === topCommandObj.elem && e.params === topParamForCommand.elem;
-        }).map(function (e) {
+        var users = statsObject.commands.map(function (e) {
             return e.user;
         });
-        var topUserForCommandAndParam = getMaxOfArray(usersForCommandAndParam);
+        var topUser = getMaxOfArray(users);
 
-        var result = "Top command: !" + topCommandObj.elem + " " + topParamForCommand.elem + " (Count: " + topParamForCommand.count + " User: " + topUserForCommandAndParam.elem + "[" + topUserForCommandAndParam.count + "])";
+        var result = "Top command: !" + topCommand.elem + "(" + topCommand.count + ") " + topParamForCommand.elem + "(" + topParamForCommand.count + "). Top user: " + topUser.elem + "(" + topUser.count + ")";
         _clientInfo.client.say(_clientInfo.channel, result);
     }
 };
