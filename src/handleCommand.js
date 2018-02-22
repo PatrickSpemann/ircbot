@@ -7,6 +7,7 @@ var eightball = require("./eightball");
 var stats = require("./stats");
 var roll = require("./roll");
 var seen = require("./seen");
+var quote = require("./quote");
 var _clientInfo = undefined;
 var _options = undefined;
 
@@ -63,6 +64,12 @@ function executeCommand(command, parameters) {
         case "top":
             stats.getTop(_clientInfo, parameters);
             return "top";
+        case "quote":
+            quote.getRandom(_clientInfo, parameters);
+            return "quote";
+        case "addquote":
+            quote.add(_clientInfo, parameters);
+            return "addquote";
         case "uman":
             _clientInfo.client.say(_clientInfo.channel, "?");
             return "uman";

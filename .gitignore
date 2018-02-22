@@ -4,3 +4,4 @@ settings.json
 stats.json
 seenState.json
 /ircbot.service
+/quotes.json
