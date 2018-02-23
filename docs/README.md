@@ -10,8 +10,10 @@ Post these commands in any channel where the bot is present
 * `!g` or `!google`: Search the web with google. Example: `!g the nicest place on the internet`
 * `!i` or `!img`: Search google images. Example: `!i cute dogs`
 * `!top`: Posts statistics about the most used commands.
+* `!stats`: Posts the URL (if available) to the complete stats.
 * `!addquote`: Adds a quote to the database. Example: `!addquote <Batman> Get in the batmobile!`
-* `!quote`: Posts a random quote from the quote database.
+* `!quote`: Posts a random quote from the quote database. You can get specific quotes by providing an index. Example: `!quote 3`.
+* `!roll`: Posts the URL (if available) to the complete quotes.
 * `!uman`: ?
 
 # Remote Control

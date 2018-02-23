@@ -16,8 +16,14 @@ module.exports = {
         var quotesObject = getQuotesFromFile();
         if (!quotesObject || quotesObject.length === 0)
             return;
-        var quote = chance.pickone(quotesObject);
-        _clientInfo.client.say(_clientInfo.channel, quote);
+
+        var requestedIndex = parseInt(parameters);
+        var index = chance.integer({ min: 0, max: quotesObject.length - 1 });
+        if (!isNaN(requestedIndex) && requestedIndex <= quotesObject.length && requestedIndex > 0)
+            index = requestedIndex - 1;
+        var quote = quotesObject[index];
+        var result = "(" + (index + 1) + "/" + quotesObject.length + "): " + quote;
+        _clientInfo.client.say(_clientInfo.channel, result);
     }
 };
 

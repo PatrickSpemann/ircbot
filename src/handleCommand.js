@@ -70,6 +70,10 @@ function executeCommand(command, parameters) {
         case "addquote":
             quote.add(_clientInfo, parameters);
             return "addquote";
+        case "quotes":
+            if (_options.quotesResponse)
+                _clientInfo.client.say(_clientInfo.channel, _options.quotesResponse);
+            return "quotes";
         case "uman":
             _clientInfo.client.say(_clientInfo.channel, "?");
             return "uman";
