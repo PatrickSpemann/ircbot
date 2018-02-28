@@ -24,6 +24,7 @@ Your host must be listed under `adminHosts` in the `settings.json`.
 * `!join <channel>`: Joins the supplied `channel`. Example usage: `!join #otherChannel`
 * `!part <channel>`: Leaves the supplied `channel`. Example usage: `!part #otherChannel`
 * `!nick <nickname>`: Changes the nickname to the supplied `nickname`. Example usage: `!nick MyBot2`
+* `!removequote <index>`: Removes the quote with the supplied `index` from the database. Example usage: `!removequote 3`
 * `!say <target> <message>`: Sends the supplied `message` to the supplied `target`. Example usage: 
 ```
 !say #myChannel Hello World!

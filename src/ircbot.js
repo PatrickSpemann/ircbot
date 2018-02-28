@@ -36,8 +36,13 @@ function onPm(userName, message) {
     _client.whois(userName, onWhoisResult);
 }
 function onWhoisResult(info) {
-    if (_options.adminHosts.indexOf(info.host) !== -1)
-        handleAdminCommand(_client, lastPm);
+    if (_options.adminHosts.indexOf(info.host) !== -1) {
+        var clientInfo = {
+            client: _client,
+            userName: info.nick
+        }
+        handleAdminCommand(clientInfo, lastPm);
+    }
     lastPm = undefined;
 }
 function onMessage(userName, channel, message) {

@@ -1,8 +1,9 @@
 var utils = require("./ircbot-utils");
+var quote = require("./quote");
 var _client = undefined;
 
-module.exports = function (client, message) {
-    _client = client;
+module.exports = function (clientInfo, message) {
+    _clientInfo = clientInfo;
     handleCommand(message);
 };
 function handleCommand(message) {
@@ -10,19 +11,23 @@ function handleCommand(message) {
     var parameters = utils.extractParameters(message);
     switch (command) {
         case "join":
-            _client.join(parameters);
+            _clientInfo.client.join(parameters);
             break;
         case "part":
-            _client.part(parameters);
+            _clientInfo.client.part(parameters);
             break;
         case "say":
             var firstSpace = parameters.indexOf(" ");
             var target = parameters.substring(0, firstSpace);
             var message = parameters.substring(firstSpace + 1);
-            _client.say(target, message);
+            _clientInfo.client.say(target, message);
             break;
         case "nick":
-            _client.send("NICK", parameters);
+            _clientInfo.client.send("NICK", parameters);
+            break;
+        case "removequote":
+            quote.remove(_clientInfo, parameters);
+            break;
         default:
             break;
     }

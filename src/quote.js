@@ -24,6 +24,17 @@ module.exports = {
         var quote = quotesObject[index];
         var result = "(" + (index + 1) + "/" + quotesObject.length + "): " + quote;
         _clientInfo.client.say(_clientInfo.channel, result);
+    },
+    remove: function (_clientInfo, parameters) {
+        var quotesObject = getQuotesFromFile();
+        if (!quotesObject || quotesObject.length === 0)
+            return;
+        var requestedIndex = parseInt(parameters) - 1;
+        if (isNaN(requestedIndex) || requestedIndex > quotesObject.length || requestedIndex < 0)
+            return;
+        quotesObject.splice(requestedIndex, 1);
+        _clientInfo.client.say(_clientInfo.userName, "quote #" + (requestedIndex + 1) + " removed!");
+        writeQuotesToFile(quotesObject);
     }
 };
 
