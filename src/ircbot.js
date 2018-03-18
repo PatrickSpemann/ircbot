@@ -10,6 +10,7 @@ var genericResolve = require("./genericResolve");
 var seen = require("./seen");
 var seenState = require("./seenState");
 var directResponse = require("./directResponse");
+var timer = require("./timer");
 
 var _client = undefined;
 var lastPm = undefined;
@@ -30,7 +31,27 @@ module.exports.start = function (options) {
     _client.addListener("names", seen.onNames);
     seenState.registerEvents(_client);
     _client.addListener("error", onError);
+    
+    var clientInfo = {
+            client: _client,
+            userName: userName,
+            channel: channel
+        };
+    
+    while(true) {
+    	loop(clientInfo);
+    }
 };
+
+async function loop(clientInfo) {
+	timer.checkTimers(clientInfo);
+	await sleep(1000);
+}
+
+function sleep(ms) {
+	  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 function onPm(userName, message) {
     lastPm = message;
     _client.whois(userName, onWhoisResult);
@@ -62,7 +83,9 @@ function onMessage(userName, channel, message) {
         resolveUrl(clientInfo, url);
 }
 function resolveUrl(clientInfo, url) {
-    var resolvers = [imdbResolve, youtubeResolve, twitchResolve, genericResolve]; //order is important!
+    var resolvers = [imdbResolve, youtubeResolve, twitchResolve, genericResolve]; // order
+																					// is
+																					// important!
     for (var i = 0; i < resolvers.length; i++)
         if (resolvers[i](clientInfo, url))
             return;
