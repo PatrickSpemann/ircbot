@@ -33,7 +33,7 @@ module.exports = {
         });
         var topUser = getMaxOfArray(users);
 
-        var result = "Top command: !" + topCommand.elem + "(" + topCommand.count + ") " + topParamForCommand.elem + "(" + topParamForCommand.count + "). Top user: " + topUser.elem + "(" + topUser.count + ")";
+        var result = "Top command: !" + topCommand.elem + "(" + topCommand.count + "/" + statsObject.commands.length + ") " + topParamForCommand.elem + "(" + topParamForCommand.count + "). Top user: " + topUser.elem + "(" + topUser.count + ")";
         _clientInfo.client.say(_clientInfo.channel, result);
     }
 };
