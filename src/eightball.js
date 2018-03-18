@@ -21,11 +21,11 @@ add("Outlook good");
 add("Yes");
 add("Signs point to yes");
 
-add("Reply hazy try again", 10);
-add("Ask again later", 10);
-add("Better not tell you now", 10);
-add("Cannot predict now", 10);
-add("Concentrate and ask again", 10);
+add("Reply hazy try again", 20);
+add("Ask again later", 20);
+add("Better not tell you now", 20);
+add("Cannot predict now", 20);
+add("Concentrate and ask again", 20);
 
 add("Don't count on it");
 add("My reply is no");
