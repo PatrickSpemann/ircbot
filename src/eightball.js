@@ -1,40 +1,36 @@
 var utils = require("./ircbot-utils");
 var chance = require("chance").Chance();
 
-const defaultWeight = 100;
-var answers = [];
-function add(text, weight) {
-    weight = weight || defaultWeight;
-    answers.push({
-        text: text,
-        weight: weight
-    });
-}
-add("It is certain");
-add("It is decidedly so");
-add("Without a doubt");
-add("Yes definitely");
-add("You may rely on it");
-add("As I see it, yes");
-add("Most likely");
-add("Outlook good");
-add("Yes");
-add("Signs point to yes");
-
-add("Reply hazy try again", 10);
-add("Ask again later", 10);
-add("Better not tell you now", 10);
-add("Cannot predict now", 10);
-add("Concentrate and ask again", 10);
-
-add("Don't count on it");
-add("My reply is no");
-add("My sources say no");
-add("Outlook not so good");
-add("Very doubtful");
-
-add("Yes, but you take an arrow to the knee!", 1);
-add("No, but you take an arrow to the knee!", 1);
+const positive = [
+    "It is certain",
+    "It is decidedly so",
+    "Without a doubt",
+    "Yes definitely",
+    "You may rely on it",
+    "As I see it, yes",
+    "Most likely",
+    "Outlook good",
+    "Yes",
+    "Signs point to yes"
+];
+const neutral = [
+    "Reply hazy try again",
+    "Ask again later",
+    "Better not tell you now",
+    "Cannot predict now",
+    "Concentrate and ask again"
+];
+const negative = [
+    "Don't count on it",
+    "My reply is no",
+    "My sources say no",
+    "Outlook not so good",
+    "Very doubtful"
+];
+const secret = [
+    "Yes, but you take an arrow to the knee!",
+    "No, but you take an arrow to the knee!"
+];
 
 module.exports = function (clientInfo, question) {
     if (question.trim() === "")
@@ -42,11 +38,17 @@ module.exports = function (clientInfo, question) {
     clientInfo.client.say(clientInfo.channel, getResponse(question));
 };
 function getResponse(question) {
-    var texts = answers.map(function (item) {
-        return item.text;
-    });
-    var weights = answers.map(function (item) {
-        return item.weight;
-    })
-    return chance.weighted(texts, weights);
+    var category = getCategory();
+    return chance.pickone(category);
+}
+function getCategory() {
+    var randomInt = chance.integer({ min: 0, max: 100 })
+    if (randomInt === 0)
+        return secret;
+    else if (randomInt <= 20)
+        return neutral;
+    else if (randomInt <= 60)
+        return negative;
+    else
+        return positive;
 }
