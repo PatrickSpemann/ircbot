@@ -10,6 +10,7 @@ var genericResolve = require("./genericResolve");
 var seen = require("./seen");
 var seenState = require("./seenState");
 var directResponse = require("./directResponse");
+var timer = require("./timer");
 
 var _client = undefined;
 var lastPm = undefined;
@@ -30,7 +31,10 @@ module.exports.start = function (options) {
     _client.addListener("names", seen.onNames);
     seenState.registerEvents(_client);
     _client.addListener("error", onError);
+    
+    timer.restore(_client);
 };
+
 function onPm(userName, message) {
     lastPm = message;
     _client.whois(userName, onWhoisResult);
