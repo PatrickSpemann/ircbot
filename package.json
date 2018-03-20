@@ -25,6 +25,7 @@
     "imdb": "git://github.com/PatrickSpemann/imdb.git#master",
     "irc": "^0.5.2",
     "iso8601-duration": "^1.0.6",
+    "node-schedule": "^1.3.0",
     "pad": "^1.1.0",
     "request": "^2.83.0",
     "url-parse": "^1.1.9",

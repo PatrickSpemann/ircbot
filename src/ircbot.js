@@ -31,26 +31,7 @@ module.exports.start = function (options) {
     _client.addListener("names", seen.onNames);
     seenState.registerEvents(_client);
     _client.addListener("error", onError);
-    
-    var clientInfo = {
-            client: _client,
-            userName: userName,
-            channel: channel
-        };
-    
-    while(true) {
-    	loop(clientInfo);
-    }
 };
-
-async function loop(clientInfo) {
-	timer.checkTimers(clientInfo);
-	await sleep(1000);
-}
-
-function sleep(ms) {
-	  return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 function onPm(userName, message) {
     lastPm = message;

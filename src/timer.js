@@ -1,9 +1,8 @@
-/**
- * 
- */
+var schedule = require("node-schedule");
 
 var times = [];
 var messages = [];
+var jobs = [];
 
 module.exports = {
 	addTimer : function(clientInfo, parameters) {
@@ -12,11 +11,11 @@ module.exports = {
 		var time = 0;
 		if (parameterarray.length > 1) {
 			time = parseDate(parameterarray[0]);
-			var message = parseMessage(parameterarray);
+			var message = clientInfo.userName + ': ' + parseMessage(parameterarray);
 		}
 		if (time === 0)
 			return;
-		addTimer(time, message);
+		addTimer(clientInfo, time, message);
 		clientInfo.client.say(clientInfo.channel, 'Timer added.');
 
 	},
@@ -36,30 +35,31 @@ function parseDate(dateString) {
 	var minutes = 0;
 	var seconds = 0;
 
-	var substring = dateString.split('d');
-	if (substring.length === 2) {
-		days = substring[0] * 86400000;
-		substring.splice(0, 1);
-	}
-	substring.join();
-
-	substring.split('h');
-	if (substring.length === 2) {
-		hours = substring[0] * 3600000;
-		substring.splice(0, 1);
-	}
-	substring.join();
-
-	substring.split('m');
-	if (substring.length === 2) {
-		minutes = substring[0] * 60000;
-		substring.splice(0, 1);
-	}
-	substring.join();
-
-	substring.split('s');
-	if (substring.length === 2) {
-		seconds = substring[0] * 1000;
+	var time = '0';
+	
+	for(var i = 0; i < dateString.length; i++) {
+		var char = dateString.charAt(i);
+		
+		switch (char) {
+			case 'd':
+				days = parseInt(time) * 86400000;
+				time = '0';
+				break;
+			case 'h':
+				hours = parseInt(time) * 3600000;
+				time = '0';
+				break;
+			case 'm':
+				minutes = parseInt(time) * 60000;
+				time = '0';
+				break;
+			case 's':
+				seconds = parseInt(time) * 1000;
+				time = '0';
+				break;
+			default:
+				time += char;
+		}
 	}
 
 	if (days === 0 && hours === 0 && minutes === 0 && seconds === 0)
@@ -72,13 +72,15 @@ function parseDate(dateString) {
 
 function parseMessage(array) {
 	var message = array.splice(0, 1);
-	message.join();
-	return message;
+    return message.join(' ');
 }
 
-function addTimer(time, message) {
+function addTimer(clientInfo, time, message) {
 	times.push(time);
 	messages.push(message);
+	
+	var date = new Date(time);
+	jobs.push(schedule.scheduleJob(date, clientInfo.client.say(clientInfo.channel, message)));
 }
 
 function postReminder(clientInfo, index) {
