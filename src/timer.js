@@ -29,9 +29,9 @@ module.exports = {
 				if(job.time < now) {
 					toBeRemoved.push(job);
 				} else {
-					schedule.scheduleJob(new Date(job.time), function () {
-						client.say(job.channel, job.message);
-					});
+					schedule.scheduleJob(new Date(job.time), function (x,y) {
+						client.say(x, y);
+					}.bind(null,job.channel,job.message));
 				}
 			}
 			
