@@ -79,7 +79,7 @@ function executeCommand(command, parameters) {
             _clientInfo.client.say(_clientInfo.channel, "?");
             return "uman";
         case "timer":
-        	timer(_clientInfo, parameters);
+        	timer.add(_clientInfo, parameters);
         	return "timer";
         default:
             return "";

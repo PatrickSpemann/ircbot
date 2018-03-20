@@ -31,6 +31,8 @@ module.exports.start = function (options) {
     _client.addListener("names", seen.onNames);
     seenState.registerEvents(_client);
     _client.addListener("error", onError);
+    
+    timer.restore(_client);
 };
 
 function onPm(userName, message) {

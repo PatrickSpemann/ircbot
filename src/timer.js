@@ -1,16 +1,44 @@
+var fs = require("fs-extra");
 var schedule = require("node-schedule");
 
-module.exports = function(clientInfo, parameters) {
-		var parameterarray = parameters.split(' ');
-		var time = 0;
-		if (parameterarray.length > 1) {
-			time = parseDate(parameterarray[0]);
-			var message = clientInfo.userName + ': ' + parseMessage(parameterarray);
+const timersFilePath = "./timers.json";
+
+module.exports = {
+		add: function(clientInfo, parameters) {
+			var parameterarray = parameters.split(' ');
+			var time = 0;
+			if (parameterarray.length > 1) {
+				time = parseDate(parameterarray[0]);
+				var message = clientInfo.userName + ': ' + parseMessage(parameterarray);
+			}
+			if (time === 0)
+				return;
+			addTimer(clientInfo, time, message);
+			clientInfo.client.say(clientInfo.channel, 'Timer added.');
+		},
+		
+		restore: function (client) {
+			var timersObject = getTimersFromFile();
+			var now = Date.now();
+			var toBeRemoved = [];
+			
+			for(var i = 0; i < timersObject.length; i++) {
+				var job = timersObject[i];
+				if(job.time < now) {
+					toBeRemoved.push(job);
+				} else {
+					schedule.scheduleJob(new Date(job.time), function () {
+						client.say(job.channel, job.message);
+					});
+				}
+			}
+			
+			for(var i = 0; i < toBeRemoved.length; i++) {
+				timersObject.splice(timersObject.indexOf(toBeRemoved[i]), 1);
+			}
+			
+			writeTimersToFile(timersObject);
 		}
-		if (time === 0)
-			return;
-		addTimer(clientInfo, time, message);
-		clientInfo.client.say(clientInfo.channel, 'Timer added.');
 };
 
 function parseDate(dateString) {
@@ -20,7 +48,7 @@ function parseDate(dateString) {
 	var seconds = 0;
 
 	var time = '0';
-	
+
 	for(var i = 0; i < dateString.length; i++) {
 		var char = dateString.charAt(i);
 		
@@ -58,9 +86,35 @@ function parseMessage(array) {
     return message.join(' ');
 }
 
-function addTimer(clientInfo, time, message) {
-	var date = new Date(time);
-	var job = schedule.scheduleJob(date, function () {
-			clientInfo.client.say(clientInfo.channel, message);
+function addTimer(clientInfo, _time, _message) {
+	var date = new Date(_time);
+	schedule.scheduleJob(date, function () {
+			clientInfo.client.say(clientInfo.channel, _message);
 		});
+	
+	var timersObject = getTimersFromFile();
+	var job = {
+			time: _time,
+			message: _message,
+			channel: clientInfo.channel
+		}
+	timersObject.push(job);
+	writeTimersToFile(timersObject);
 }
+
+function getTimersFromFile() {
+    try {
+        return fs.readJsonSync(timersFilePath);
+    }
+    catch (e) {
+        return [];
+    }
+}
+function writeTimersToFile(timersObject) {
+    try {
+        fs.writeJsonSync(timersFilePath, timersObject);
+    }
+    catch (e) {
+        console.log("error writing timers to file: " + e);
+    }
+};
