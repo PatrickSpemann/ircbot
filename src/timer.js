@@ -1,12 +1,6 @@
 var schedule = require("node-schedule");
 
-var times = [];
-var messages = [];
-var jobs = [];
-
-module.exports = {
-	addTimer : function(clientInfo, parameters) {
-
+module.exports = function(clientInfo, parameters) {
 		var parameterarray = parameters.split(' ');
 		var time = 0;
 		if (parameterarray.length > 1) {
@@ -17,16 +11,6 @@ module.exports = {
 			return;
 		addTimer(clientInfo, time, message);
 		clientInfo.client.say(clientInfo.channel, 'Timer added.');
-
-	},
-
-	checkTimers : function(clientInfo) {
-		var now = Date.now();
-		for (i = 0; i < times.length; i++) {
-			if (now >= times[i])
-				postReminder(clientInfo, i);
-		}
-	}
 };
 
 function parseDate(dateString) {
@@ -67,24 +51,16 @@ function parseDate(dateString) {
 
 	var time = Date.now() + days + hours + minutes + seconds;
 	return time;
-
 }
 
 function parseMessage(array) {
-	var message = array.splice(0, 1);
+	var message = array.splice(1);
     return message.join(' ');
 }
 
 function addTimer(clientInfo, time, message) {
-	times.push(time);
-	messages.push(message);
-	
 	var date = new Date(time);
-	jobs.push(schedule.scheduleJob(date, clientInfo.client.say(clientInfo.channel, message)));
-}
-
-function postReminder(clientInfo, index) {
-	clientInfo.client.say(clientInfo.channel, messages[index]);
-	times.splice(index, 1);
-	messages.splice(index, 1);
+	var job = schedule.scheduleJob(date, function () {
+			clientInfo.client.say(clientInfo.channel, message);
+		});
 }
