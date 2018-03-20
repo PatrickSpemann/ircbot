@@ -11,8 +11,10 @@ module.exports = {
 				time = parseDate(parameterarray[0]);
 				var message = clientInfo.userName + ': ' + parseMessage(parameterarray);
 			}
-			if (time === 0)
+			if (time === 0) {
+				clientInfo.client.say(clientInfo.channel, 'Usage: !timer #d#h#m#s message.');
 				return;
+			}
 			addTimer(clientInfo, time, message);
 			clientInfo.client.say(clientInfo.channel, 'Timer added.');
 		},
@@ -77,7 +79,12 @@ function parseDate(dateString) {
 	if (days === 0 && hours === 0 && minutes === 0 && seconds === 0)
 		return 0;
 
-	var time = Date.now() + days + hours + minutes + seconds;
+	var now = Date.now();
+	var time = now + days + hours + minutes + seconds;
+	
+	if (time > now + 365 * 86400000)
+		return 0;
+	
 	return time;
 }
 
@@ -99,6 +106,22 @@ function addTimer(clientInfo, _time, _message) {
 			channel: clientInfo.channel
 		}
 	timersObject.push(job);
+	
+	/*Clean up*/
+	var now = Date.now();
+	var toBeRemoved = [];
+	
+	for(var i = 0; i < timersObject.length; i++) {
+		var obj = timersObject[i];
+		if(obj.time < now) {
+			toBeRemoved.push(obj);
+		}
+	}
+	
+	for(var i = 0; i < toBeRemoved.length; i++) {
+		timersObject.splice(timersObject.indexOf(toBeRemoved[i]), 1);
+	}
+	
 	writeTimersToFile(timersObject);
 }
 
