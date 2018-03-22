@@ -15,6 +15,7 @@ Post these commands in any channel where the bot is present
 * `!quote`: Posts a random quote from the quote database. You can get specific quotes by providing an index. Example: `!quote 3`.
 * `!roll`: Posts the URL (if available) to the complete quotes.
 * `!timer`: Posts a reminder after a given delay. Example: `!timer 1d1h1m1s Reminder`
+* `!joke`: Posts a random joke.
 * `!uman`: ?
 
 # Remote Control

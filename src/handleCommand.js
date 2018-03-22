@@ -9,6 +9,7 @@ var roll = require("./roll");
 var seen = require("./seen");
 var quote = require("./quote");
 var timer = require("./timer");
+var jokes = require("./jokes")
 var _clientInfo = undefined;
 var _options = undefined;
 
@@ -79,8 +80,11 @@ function executeCommand(command, parameters) {
             _clientInfo.client.say(_clientInfo.channel, "?");
             return "uman";
         case "timer":
-        	timer.add(_clientInfo, parameters);
-        	return "timer";
+            timer.add(_clientInfo, parameters);
+            return "timer";
+        case "joke":
+            jokes.get(_clientInfo, parameters);
+            return "joke"
         default:
             return "";
     }

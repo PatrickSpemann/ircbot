@@ -5,3 +5,4 @@ stats.json
 seenState.json
 /ircbot.service
 /quotes.json
+/timers.json
