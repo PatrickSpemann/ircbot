@@ -5,15 +5,24 @@ var _lastImdbId = undefined;
 
 module.exports = function (clientInfo, searchString) {
     _clientInfo = clientInfo;
-    IMDB.search(searchString, onImdbSearchResult);
+    try {
+    	IMDB.search(searchString, onImdbSearchResult);
+    } catch (error) {
+    	console.log('IMDB search failed.\n' + error);
+    }
 }
 function onImdbSearchResult(error, result) {
     if (error)
         console.log(error);
     else {
         _lastImdbId = result.id;
-        if (_lastImdbId !== "N/A")
-            IMDB(_lastImdbId, onImdbResult);
+        if (_lastImdbId !== "N/A") {
+        	try {
+				IMDB(_lastImdbId, onImdbResult);
+			} catch (error) {
+				console.log('Failed to get IMDB result.\n' + error);
+			}
+		}
     }
 }
 function onImdbResult(error, result) {
