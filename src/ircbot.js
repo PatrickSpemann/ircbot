@@ -67,7 +67,7 @@ function onMessage(userName, channel, message) {
         resolveUrl(clientInfo, url);
 }
 function resolveUrl(clientInfo, url) {
-    var resolvers = [imdbResolve, youtubeResolve, twitchResolve, genericResolve, cryptoCurrency]; //order is important!
+    var resolvers = [imdbResolve, youtubeResolve, twitchResolve, genericResolve]; //order is important!
     for (var i = 0; i < resolvers.length; i++)
         if (resolvers[i](clientInfo, url))
             return;
