@@ -11,6 +11,7 @@ var seen = require("./seen");
 var seenState = require("./seenState");
 var directResponse = require("./directResponse");
 var timer = require("./timer");
+var cryptoCurrency = require("./cryptoCurrency");
 
 var _client = undefined;
 var lastPm = undefined;
@@ -66,7 +67,7 @@ function onMessage(userName, channel, message) {
         resolveUrl(clientInfo, url);
 }
 function resolveUrl(clientInfo, url) {
-    var resolvers = [imdbResolve, youtubeResolve, twitchResolve, genericResolve]; //order is important!
+    var resolvers = [imdbResolve, youtubeResolve, twitchResolve, genericResolve, cryptoCurrency]; //order is important!
     for (var i = 0; i < resolvers.length; i++)
         if (resolvers[i](clientInfo, url))
             return;

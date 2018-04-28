@@ -6,7 +6,7 @@ var _searchString = "";
 module.exports = function (clientInfo, searchString) {
     _clientInfo = clientInfo;
     _searchString = searchString.toLowerCase();
-    request("https://api.coinmarketcap.com/v1/ticker/?limit=20&convert=EUR", onResponse);
+    request("https://api.coinmarketcap.com/v1/ticker/?limit=50", onResponse);
 }
 
 function onResponse(error, response, body) {
@@ -20,7 +20,7 @@ function onResponse(error, response, body) {
             if (matchingCurrencies.length > 0) {
                 var resultCurrency = matchingCurrencies[0];
 
-                var message = "Price " + resultCurrency.price_eur + "€" + " | Change (24h) " + resultCurrency.percent_change_24h + "%";
+                var message = "Price $" + resultCurrency.price_usd  + " | Change (24h) " + resultCurrency.percent_change_24h + "%";
                 _clientInfo.client.say(_clientInfo.channel, message);
             }
         }
