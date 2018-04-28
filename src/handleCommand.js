@@ -10,6 +10,7 @@ var seen = require("./seen");
 var quote = require("./quote");
 var timer = require("./timer");
 var jokes = require("./jokes")
+var cryptoCurrency = require("./cryptoCurrency");
 var _clientInfo = undefined;
 var _options = undefined;
 
@@ -85,6 +86,10 @@ function executeCommand(command, parameters) {
         case "joke":
             jokes.get(_clientInfo, parameters);
             return "joke"
+        case "price":
+        case "crypto":
+            cryptoCurrency(_clientInfo, parameters);
+            return "crypto";
         default:
             return "";
     }

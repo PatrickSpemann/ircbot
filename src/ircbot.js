@@ -11,7 +11,6 @@ var seen = require("./seen");
 var seenState = require("./seenState");
 var directResponse = require("./directResponse");
 var timer = require("./timer");
-
 var _client = undefined;
 var lastPm = undefined;
 var _options = undefined;
