@@ -20,7 +20,10 @@ function onResponse(error, response, body) {
             if (matchingCurrencies.length > 0) {
                 var resultCurrency = matchingCurrencies[0];
 
-                var message = "Price $" + resultCurrency.price_usd  + " | Change (24h) " + resultCurrency.percent_change_24h + "%";
+                var message = "Price: $" + resultCurrency.price_usd
+                  + " | Change: " + resultCurrency.percent_change_1h + "% (1h)"
+                  + " / " + resultCurrency.percent_change_24h + "% (24h)"
+                  + " / " + resultCurrency.percent_change_7d + "% (7d)";
                 _clientInfo.client.say(_clientInfo.channel, message);
             }
         }
