@@ -48,6 +48,7 @@ module.exports = {
         _clientInfo.client.say(_clientInfo.channel, "Message for " + _userName + " received.");
     },
     onJoin: function (channel, userName) {
+        userName = userName.toLowerCase();
         var state = getStateFromFile();
         if (!state[userName])
             return;
