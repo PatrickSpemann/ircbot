@@ -11,6 +11,7 @@ var quote = require("./quote");
 var timer = require("./timer");
 var jokes = require("./jokes")
 var cryptoCurrency = require("./cryptoCurrency");
+var delayedMessage = require("./delayedMessage")
 var _clientInfo = undefined;
 var _options = undefined;
 
@@ -90,6 +91,10 @@ function executeCommand(command, parameters) {
         case "crypto":
             cryptoCurrency(_clientInfo, parameters);
             return "crypto";
+        case "message":
+        case "msg":
+            delayedMessage.register(_clientInfo, parameters);
+            return "message"
         default:
             return "";
     }

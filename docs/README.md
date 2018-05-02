@@ -17,6 +17,7 @@ Post these commands in any channel where the bot is present
 * `!timer`: Posts a reminder after a given delay. Example: `!timer 1d1h1m1s Reminder`
 * `!joke`: Posts a random joke.
 * `!crypto` or `price`: Gets crypto currency data via coinmarketcap API. You can search by name or ticker symbol.
+* `!message` or `msg`: Sends a message to a user the next time he joins the channel. Example: `!message Kirill Hello!`.
 * `!uman`: ?
 
 # Remote Control
