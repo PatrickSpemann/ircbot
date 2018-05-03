@@ -6,8 +6,9 @@ var _userName = "";
 var _namesRequested = false;
 var _message = "";
 var _stateFilePath = "./messages.json";
-var _maxMessagesForUser = 1;
+var _maxMessagesForUser = 3;
 var _maxMessageLength = 200;
+var _messageDurationMsec = 1000 * 60 * 60 * 24 * 7; //7 days
 
 module.exports = {
     setClient: function (clientObject) {
@@ -20,7 +21,7 @@ module.exports = {
         _userName = parameters.split(" ")[0].toLowerCase();
         _message = parameters.substring(parameters.indexOf(" ") + 1);
         if (_message.length > _maxMessageLength) {
-            _clientInfo.client.say(_clientInfo.channel, "Messages can at most be 200 characters.");
+            _clientInfo.client.say(_clientInfo.channel, "Messages can at most be " + _maxMessageLength + " characters.");
             return;
         }
         _namesRequested = true;
@@ -35,29 +36,30 @@ module.exports = {
         var state = getStateFromFile();
         if (!state[_userName])
             state[_userName] = [];
-        if (state[_userName].length > _maxMessagesForUser) {
+        if (state[_userName].length >= _maxMessagesForUser) {
             _clientInfo.client.say(_clientInfo.channel, _userName + " cannot have more than " + _maxMessagesForUser + " messages waiting for them.");
             return;
         }
         state[_userName].push({
             sender: _clientInfo.userName,
             channel: _clientInfo.channel,
-            message: _message
+            message: _message,
+            expires: new Date().getTime() + _messageDurationMsec
         });
         writeStateToFile(state);
         _clientInfo.client.say(_clientInfo.channel, "Message for " + _userName + " received.");
     },
     onJoin: function (channel, userName) {
-        userName = userName.toLowerCase();
+        lowerCaseUserName = userName.toLowerCase();
         var state = getStateFromFile();
-        if (!state[userName])
+        if (!state[lowerCaseUserName])
             return;
-        for (var i = 0; i < state[userName].length; i++) {
-            var messageObject = state[userName][i];
+        for (var i = 0; i < state[lowerCaseUserName].length; i++) {
+            var messageObject = state[lowerCaseUserName][i];
             if (messageObject.channel === channel)
                 _client.say(channel, "Message for " + userName + " from " + messageObject.sender + ": " + messageObject.message);
         }
-        delete state[userName];
+        delete state[lowerCaseUserName];
         writeStateToFile(state);
     }
 };
@@ -69,6 +71,19 @@ function userIsInChannel(names) {
     });
     return namesArray.indexOf(_userName) !== -1;
 }
+function removeExpiredMessages(state) {
+    var currentTime = new Date().getTime();
+    for (var name in state) {
+        if (!state.hasOwnProperty(name))
+            continue;
+        var indicesToRemove = [];
+        for (var i = 0; i < state[name].length; i++)
+            if (state[name][i].expires <= currentTime)
+                indicesToRemove.push(i);
+        for (var i = indicesToRemove.length - 1; i >= 0; i--) //go backwards to not mess up order when removing multiples
+            state[name].splice(indicesToRemove[i], 1);
+    }
+}
 function writeStateToFile(state) {
     try {
         fs.writeJsonSync(_stateFilePath, state);
@@ -79,7 +94,9 @@ function writeStateToFile(state) {
 }
 function getStateFromFile() {
     try {
-        return fs.readJsonSync(_stateFilePath);
+        var state = fs.readJsonSync(_stateFilePath);
+        removeExpiredMessages(state);
+        return state;
     }
     catch (e) {
         return {};
