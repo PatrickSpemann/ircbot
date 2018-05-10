@@ -11,6 +11,7 @@ var quote = require("./quote");
 var timer = require("./timer");
 var jokes = require("./jokes")
 var cryptoCurrency = require("./cryptoCurrency");
+var weather = require("./weather");
 var _clientInfo = undefined;
 var _options = undefined;
 
@@ -90,6 +91,9 @@ function executeCommand(command, parameters) {
         case "crypto":
             cryptoCurrency(_clientInfo, parameters);
             return "crypto";
+        case "w":
+        case "weather":
+            weather(_clientInfo, parameters);
         default:
             return "";
     }
