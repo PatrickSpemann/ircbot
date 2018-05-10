@@ -95,6 +95,7 @@ function executeCommand(command, parameters) {
         case "w":
         case "weather":
             weather(_clientInfo, parameters);
+            return "weather";
         case "message":
         case "msg":
             delayedMessage.register(_clientInfo, parameters);
