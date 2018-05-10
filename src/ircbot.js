@@ -8,6 +8,7 @@ var youtubeResolve = require("./youtubeResolve");
 var twitchResolve = require("./twitchResolve");
 var genericResolve = require("./genericResolve");
 var seen = require("./seen");
+var delayedMessage = require("./delayedMessage");
 var seenState = require("./seenState");
 var directResponse = require("./directResponse");
 var timer = require("./timer");
@@ -28,9 +29,12 @@ module.exports.start = function (options) {
     _client.addListener("pm", onPm);
     _client.addListener("message#", onMessage);
     _client.addListener("names", seen.onNames);
+    delayedMessage.setClient(_client);
+    _client.addListener("names", delayedMessage.onNames);
+    _client.addListener("join", delayedMessage.onJoin);
     seenState.registerEvents(_client);
     _client.addListener("error", onError);
-    
+
     timer.restore(_client);
 };
 
