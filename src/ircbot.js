@@ -36,7 +36,14 @@ module.exports.start = function (options) {
     _client.addListener("error", onError);
 
     timer.restore(_client);
+    setInterval(renameSelf, 1000 * 60 * 5 /* 5 minutes */);
 };
+
+function renameSelf() {
+    if (_client.nick === _options.nickname)
+        return;
+    _client.send("NICK", _options.nickname);
+}
 
 function onPm(userName, message) {
     lastPm = message;
