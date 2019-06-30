@@ -10,6 +10,7 @@ module.exports = {
         if (quoteString === "")
             return;
         quotesObject.push(parameters);
+        _clientInfo.client.say(_clientInfo.channel, "Quote #" + quotesObject.length + " added.");
         writeQuotesToFile(quotesObject);
     },
     getRandom: function (_clientInfo, parameters) {
