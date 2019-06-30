@@ -13,7 +13,7 @@ Post these commands in any channel where the bot is present
 * `!stats`: Posts the URL (if available) to the complete stats.
 * `!addquote`: Adds a quote to the database. Example: `!addquote <Batman> Get in the batmobile!`
 * `!quote`: Posts a random quote from the quote database. You can get specific quotes by providing an index. Example: `!quote 3`.
-* `!roll`: Posts the URL (if available) to the complete quotes.
+* `!quotes`: Posts the URL (if available) to the complete quotes.
 * `!timer`: Posts a reminder after a given delay. Example: `!timer 1d1h1m1s Reminder`
 * `!joke`: Posts a random joke.
 * `!crypto` or `price`: Gets crypto currency data via coinmarketcap API. You can search by name or ticker symbol.
