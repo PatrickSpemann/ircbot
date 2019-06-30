@@ -2,32 +2,40 @@ var request = require("request");
 var URL = require("url-parse");
 
 var _clientInfo = undefined;
-var _twitchChannel = undefined;
 var _headers = { "Client-ID": "mmq1seoi7p2atbsuvap7vzr1spwx9i" }
 
+//Todo refactor: code re-use
 module.exports = function (clientInfo, url) {
     _clientInfo = clientInfo;
-    _twitchChannel = getTwitchChannel(new URL(url));
-    if (_twitchChannel)
-        makeApiCall(_twitchChannel);
-    return _twitchChannel;
+    var urlHandled = handleTwitchUrl(new URL(url));
+    return urlHandled;
 }
-function getTwitchChannel(urlObject) {
-    if (urlObject.hostname === "go.twitch.tv" || urlObject.hostname === "twitch.tv") {
-        var pathParts = urlObject.pathname.split("/");
-        for (var i = 0; i < pathParts.length; i++)
-            if (pathParts[i] !== "")
-                return pathParts[i];
+function handleTwitchUrl(urlObject) {
+    switch (urlObject.hostname) {
+        case "go.twitch.tv":
+        case "twitch.tv":
+            var pathParts = urlObject.pathname.split("/");
+            for (var i = 0; i < pathParts.length; i++)
+                if (pathParts[i] !== "")
+                    request({
+                        url: "https://api.twitch.tv/helix/streams?user_login=" + pathParts[i],
+                        headers: _headers
+                    }, onStreamsResponse);
+            return true;
+        case "clips.twitch.tv":
+            var pathParts = urlObject.pathname.split("/");
+            for (var i = 0; i < pathParts.length; i++)
+                if (pathParts[i] !== "")
+                    request({
+                        url: "https://api.twitch.tv/helix/clips?id=" + pathParts[i],
+                        headers: _headers
+                    }, onClipsResponse);
+            return true;
+        default:
+            return false;
     }
-    return undefined;
 }
-function makeApiCall(channel) {
-    request({
-        url: "https://api.twitch.tv/helix/streams?user_login=" + channel,
-        headers: _headers
-    }, onTwitchResponse);
-}
-function onTwitchResponse(error, response, body) {
+function onStreamsResponse(error, response, body) {
     if (!error) {
         try {
             var json = JSON.parse(body);
@@ -39,8 +47,25 @@ function onTwitchResponse(error, response, body) {
 
                 var gameName = _gameMap[stream.game_id];
                 if (gameName) {
-                    message += " [" + gameName + "]"
+                    message += " [" + gameName + "]";
                 }
+                _clientInfo.client.say(_clientInfo.channel, message);
+            }
+        }
+        catch (e) {
+        }
+    }
+}
+function onClipsResponse(error, response, body) {
+    if (!error) {
+        try {
+            var json = JSON.parse(body);
+            if (json.data.length > 0) {
+                var clipInfo = json.data[0];
+                var message = clipInfo.broadcaster_name + ": " + clipInfo.title + " [" + clipInfo.view_count + "]";
+                var gameName = _gameMap[clipInfo.game_id];
+                if (gameName)
+                    message += " [" + gameName + "]";
                 _clientInfo.client.say(_clientInfo.channel, message);
             }
         }
