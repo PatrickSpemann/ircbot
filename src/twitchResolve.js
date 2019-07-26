@@ -44,12 +44,23 @@ function onStreamsResponse(error, response, body) {
                 var title = stream.title;
                 var viewers = stream.viewer_count;
                 var message = title + " [" + viewers + "]";
+                request({
+                    url: "https://api.twitch.tv/helix/games?id=" + stream.game_id,
+                    headers: _headers
+                }, function (error2, response2, body2) {
+                    if (!error2) {
+                        try {
+                            var json2 = JSON.parse(body2);
+                            if (json2.data.length > 0) {
+                                message += " [" + json2.data[0].name + "]";
+                            }
+                            _clientInfo.client.say(_clientInfo.channel, message);
+                        }
+                        catch (e) {
 
-                var gameName = _gameMap[stream.game_id];
-                if (gameName) {
-                    message += " [" + gameName + "]";
-                }
-                _clientInfo.client.say(_clientInfo.channel, message);
+                        }
+                    }
+                });
             }
         }
         catch (e) {
@@ -72,17 +83,4 @@ function onClipsResponse(error, response, body) {
         catch (e) {
         }
     }
-}
-
-var _gameMap = {};
-setGames(_gameMap);
-
-function setGames(gameMap) {
-    return request({
-        url: "https://api.twitch.tv/kraken/games/top?limit=100",
-        headers: _headers
-    }, function (error, response, body) {
-        var topGames = JSON.parse(body);
-        topGames.top.forEach(entry => gameMap[entry.game._id] = entry.game.name);
-    })
 }
