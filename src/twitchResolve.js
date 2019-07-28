@@ -74,10 +74,24 @@ function onClipsResponse(error, response, body) {
             if (json.data.length > 0) {
                 var clipInfo = json.data[0];
                 var message = clipInfo.broadcaster_name + ": " + clipInfo.title + " [" + clipInfo.view_count + "]";
-                var gameName = _gameMap[clipInfo.game_id];
-                if (gameName)
-                    message += " [" + gameName + "]";
-                _clientInfo.client.say(_clientInfo.channel, message);
+
+                request({
+                    url: "https://api.twitch.tv/helix/games?id=" + clipInfo.game_id,
+                    headers: _headers
+                }, function (error2, response2, body2) {
+                    if (!error2) {
+                        try {
+                            var json2 = JSON.parse(body2);
+                            if (json2.data.length > 0) {
+                                message += " [" + json2.data[0].name + "]";
+                            }
+                            _clientInfo.client.say(_clientInfo.channel, message);
+                        }
+                        catch (e) {
+
+                        }
+                    }
+                });
             }
         }
         catch (e) {
