@@ -67,7 +67,7 @@ function onMessage(userName, channel, message) {
         userName: userName,
         channel: channel
     };
-    if (directResponse(clientInfo, message))
+    if (directResponse(clientInfo, message, _options.nickname))
         return;
     if (handleCommand(clientInfo, message, _options))
         return;
