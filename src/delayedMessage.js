@@ -44,6 +44,7 @@ module.exports = {
             sender: _clientInfo.userName,
             channel: _clientInfo.channel,
             message: _message,
+            timestamp: getTimeStamp(),
             expires: new Date().getTime() + _messageDurationMsec
         });
         writeStateToFile(state);
@@ -56,14 +57,26 @@ module.exports = {
             return;
         for (var i = 0; i < state[lowerCaseUserName].length; i++) {
             var messageObject = state[lowerCaseUserName][i];
-            if (messageObject.channel === channel)
-                _client.say(channel, "Message for " + userName + " from " + messageObject.sender + ": " + messageObject.message);
+            if (messageObject.channel === channel) {
+                var timeString = messageObject.timestamp ? " (sent on " + messageObject.timestamp + ")" : "";
+                _client.say(channel, "Message for " + userName + " from " + messageObject.sender + timeString + ": " + messageObject.message);
+
+            }
         }
         delete state[lowerCaseUserName];
         writeStateToFile(state);
     }
 };
 
+function getTimeStamp() {
+    var date = new Date();
+    var hours = date.getHours().toString().padStart(2, '0');
+    var min = date.getMinutes().toString().padStart(2, '0');
+    var ds = date.toDateString().split(' ');
+    var month = ds[1];
+    var day = ds[2];
+    return month + ' ' + day + ' ' + hours + ':' + min;
+}
 function userIsInChannel(names) {
     var namesArray = Object.keys(names);
     namesArray = namesArray.map(function (e) {
