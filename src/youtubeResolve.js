@@ -3,7 +3,7 @@ var YouTube = require("youtube-node");
 var utils = require("./ircbot-utils");
 
 var youtube = new YouTube();
-youtube.setKey("AIzaSyCpv3iECL6EaCXMtFZaFfwFYDwTepeco1E");
+youtube.setKey("AIzaSyBCBDABmzqjrkXk1Fu3M5p-bkNapjtbS-g");
 
 var _clientInfo = undefined;
 
