@@ -1,6 +1,7 @@
-const request = require("request");
-const URL = require("url-parse");
 const util = require("util");
+const request = require("request");
+const requestPostP = util.promisify(request.post);
+const URL = require("url-parse");
 
 var _clientInfo = undefined;
 var _clientID = undefined;
@@ -9,44 +10,15 @@ var _auth = undefined;
 
 //Todo refactor: code re-use
 module.exports = {
-    initTwitchApi,
+    initCredentials,
     handleTwitchUrl
 }
 
-function getRequestHeaders() {
-    return {
-        "Authorization": _auth,
-        "Client-ID": _clientID
-	}
-}
-
-function initTwitchApi (options) {
+function initCredentials (options) {
     if (!options.twitchClientID || !options.twitchClientSecret)
         console.log("Twitch API: missing credentials in settings.")
     _clientID = options.twitchClientID;
     _clientSecret = options.twitchClientSecret;
-}
-
-function requestAccessToken() {
-    var formData = {
-        client_secret: _clientSecret,
-        grant_type: "client_credentials"
-    };
-    const requestPostP = util.promisify(request.post);
-    return requestPostP({
-        url: "https://id.twitch.tv/oauth2/token?client_id=" + _clientID,
-        form: formData,
-        headers: {"content-type": "application/json"}
-    }).then((response, body) => setAccessToken(response, body)).catch((error) => {});
-}
-
-function setAccessToken(response, body) {
-    var bodyjson = JSON.parse(response.body);
-    if (response.statusCode !== 200) {
-        console.log("Twitch API: " + bodyjson.message);
-        return;
-    }
-    _auth = "Bearer " + bodyjson.access_token;
 }
 
 function handleTwitchUrl(clientInfo, url) {
@@ -74,6 +46,13 @@ function sendRequest(url, callback) {
         url: url,
         headers: getRequestHeaders()
     }, callback);
+}
+
+function getRequestHeaders() {
+    return {
+        "Authorization": _auth,
+        "Client-ID": _clientID
+	}
 }
 
 function onStreamsResponse(error, response, body) {
@@ -146,4 +125,21 @@ function onClipsResponse(error, response, body) {
     }
     catch (e) {
     }    
+}
+
+function requestAccessToken() {
+    return requestPostP({
+        url: "https://id.twitch.tv/oauth2/token?client_id=" + _clientID,
+        form: {client_secret: _clientSecret, grant_type: "client_credentials"},
+        headers: {"content-type": "application/json"}
+    }).then((response, body) => setAccessToken(response, body)).catch((error) => {});
+}
+
+function setAccessToken(response, body) {
+    var json = JSON.parse(response.body);
+    if (response.statusCode !== 200) {
+        console.log("Twitch API: " + json.message);
+        return;
+    }
+    _auth = "Bearer " + json.access_token;
 }
