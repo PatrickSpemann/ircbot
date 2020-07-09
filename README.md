@@ -24,6 +24,8 @@ This file must contain all the properties and data types as this example:
     "adminHosts": [
         "botAdmin.users.quakenet.org"
     ],
+    "twitchClientID": "0123456789abcdefghijABCDEFGHIJ",
+	"twitchClientSecret": "abcdefghijABCDEFGHIJ0123456789",
     "statsResponse": "https://mywebsite.com/stats.json",
     "quotesResponse": "https://mywebsite.com/quotes.json"
 }
