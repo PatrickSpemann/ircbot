@@ -55,7 +55,7 @@ function getRequestHeaders() {
 }
 
 function onStreamsResponse(error, response, body) {
-    var stream = getResponseData(error, response, body, onClipsResponse);
+    var stream = getResponseData(error, response, body, onStreamsResponse);
     if (!stream)
         return;
     var message = stream.title + " [" + stream.viewer_count + "]";
