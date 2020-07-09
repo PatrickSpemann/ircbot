@@ -35,6 +35,8 @@ module.exports.start = function (options) {
     seenState.registerEvents(_client);
     _client.addListener("error", onError);
 
+    twitchResolve.initTwitchApi(options);
+
     timer.restore(_client);
     setInterval(renameSelf, 1000 * 60 * 5 /* 5 minutes */);
 };
@@ -76,11 +78,15 @@ function onMessage(userName, channel, message) {
         resolveUrl(clientInfo, url);
 }
 function resolveUrl(clientInfo, url) {
-    var resolvers = [imdbResolve, youtubeResolve, twitchResolve, genericResolve]; //order is important!
+    var resolvers = [imdbResolve, youtubeResolve, twitchResolve.handleTwitchUrl, genericResolve]; //order is important!
     for (var i = 0; i < resolvers.length; i++)
         if (resolvers[i](clientInfo, url))
             return;
 }
 function onError(message) {
-    console.log("IRC Error: " + message);
+    try {
+        console.log("IRC Error: " + JSON.stringify(message));
+    } catch (e) {
+    
+	}
 }

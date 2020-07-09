@@ -1,44 +1,90 @@
-var request = require("request");
-var URL = require("url-parse");
+const request = require("request");
+const URL = require("url-parse");
+const util = require("util");
 
 var _clientInfo = undefined;
-var _headers = { "Client-ID": "mmq1seoi7p2atbsuvap7vzr1spwx9i" }
+var _clientID = undefined;
+var _clientSecret = undefined;
+var _auth = undefined;
 
 //Todo refactor: code re-use
-module.exports = function (clientInfo, url) {
-    _clientInfo = clientInfo;
-    var urlHandled = handleTwitchUrl(new URL(url));
-    return urlHandled;
+module.exports = {
+    initTwitchApi,
+    handleTwitchUrl
 }
-function handleTwitchUrl(urlObject) {
+
+function getRequestHeaders() {
+    return {
+        "Authorization": _auth,
+        "Client-ID": _clientID
+	}
+}
+
+function initTwitchApi (options) {
+    if (!options.twitchClientID || !options.twitchClientSecret)
+        console.log("Twitch API: missing credentials in settings.")
+    _clientID = options.twitchClientID;
+    _clientSecret = options.twitchClientSecret;
+}
+
+function requestAccessToken() {
+    var formData = {
+        client_secret: _clientSecret,
+        grant_type: "client_credentials"
+    };
+    const requestPostP = util.promisify(request.post);
+    return requestPostP({
+        url: "https://id.twitch.tv/oauth2/token?client_id=" + _clientID,
+        form: formData,
+        headers: {"content-type": "application/json"}
+    }).then((response, body) => setAccessToken(response, body)).catch((error) => {});
+}
+
+function setAccessToken(response, body) {
+    var bodyjson = JSON.parse(response.body);
+    if (response.statusCode !== 200) {
+        console.log("Twitch API: " + bodyjson.message);
+        return;
+    }
+    _auth = "Bearer " + bodyjson.access_token;
+}
+
+function handleTwitchUrl(clientInfo, url) {
+    _clientInfo = clientInfo;
+    var urlObject = new URL(url);
+    var path = urlObject.pathname.split("/")[1];
+    if (!path || path === "")
+        return false;
+
     switch (urlObject.hostname) {
         case "go.twitch.tv":
         case "twitch.tv":
-            var pathParts = urlObject.pathname.split("/");
-            for (var i = 0; i < pathParts.length; i++)
-                if (pathParts[i] !== "")
-                    request({
-                        url: "https://api.twitch.tv/helix/streams?user_login=" + pathParts[i],
-                        headers: _headers
-                    }, onStreamsResponse);
+            sendRequest("https://api.twitch.tv/helix/streams?user_login=" + path, onStreamsResponse);
             return true;
         case "clips.twitch.tv":
-            var pathParts = urlObject.pathname.split("/");
-            for (var i = 0; i < pathParts.length; i++)
-                if (pathParts[i] !== "")
-                    request({
-                        url: "https://api.twitch.tv/helix/clips?id=" + pathParts[i],
-                        headers: _headers
-                    }, onClipsResponse);
+            sendRequest("https://api.twitch.tv/helix/clips?id=" + path, onClipsResponse);
             return true;
         default:
             return false;
     }
 }
+
+function sendRequest(url, callback) {
+    request({
+        url: url,
+        headers: getRequestHeaders()
+    }, callback);
+}
+
 function onStreamsResponse(error, response, body) {
-    if (!error) {
         try {
             var json = JSON.parse(body);
+            if (json.error) {
+                console.log("Twitch API: " + json.message);
+                if (json.status === 401) // Unauthorized
+                    requestAccessToken().then(() => sendRequest(response.request.href, onStreamsResponse)).catch(() => {});
+                return;
+            }
             if (json.data.length > 0) {
                 var stream = json.data[0];
                 var title = stream.title;
@@ -46,7 +92,7 @@ function onStreamsResponse(error, response, body) {
                 var message = title + " [" + viewers + "]";
                 request({
                     url: "https://api.twitch.tv/helix/games?id=" + stream.game_id,
-                    headers: _headers
+                    headers: getRequestHeaders()
                 }, function (error2, response2, body2) {
                     if (!error2) {
                         try {
@@ -65,36 +111,39 @@ function onStreamsResponse(error, response, body) {
         }
         catch (e) {
         }
-    }
 }
 function onClipsResponse(error, response, body) {
-    if (!error) {
-        try {
-            var json = JSON.parse(body);
-            if (json.data.length > 0) {
-                var clipInfo = json.data[0];
-                var message = clipInfo.broadcaster_name + ": " + clipInfo.title + " [" + clipInfo.view_count + "]";
-
-                request({
-                    url: "https://api.twitch.tv/helix/games?id=" + clipInfo.game_id,
-                    headers: _headers
-                }, function (error2, response2, body2) {
-                    if (!error2) {
-                        try {
-                            var json2 = JSON.parse(body2);
-                            if (json2.data.length > 0) {
-                                message += " [" + json2.data[0].name + "]";
-                            }
-                            _clientInfo.client.say(_clientInfo.channel, message);
-                        }
-                        catch (e) {
-
-                        }
-                    }
-                });
-            }
+    try {
+        var json = JSON.parse(body);
+        if (json.error) {
+            console.log("Twitch API: " + json.message);
+            if (json.status === 401) // Unauthorized
+                requestAccessToken().then(() => sendRequest(response.request.href, onClipsResponse)).catch(() => {});
+            return;
         }
-        catch (e) {
+        if (json.data.length > 0) {
+            var clipInfo = json.data[0];
+            var message = clipInfo.broadcaster_name + ": " + clipInfo.title + " [" + clipInfo.view_count + "]";
+
+            request({
+                url: "https://api.twitch.tv/helix/games?id=" + clipInfo.game_id,
+                headers: getRequestHeaders()
+            }, function (error2, response2, body2) {
+                if (!error2) {
+                    try {
+                        var json2 = JSON.parse(body2);
+                        if (json2.data.length > 0) {
+                            message += " [" + json2.data[0].name + "]";
+                        }
+                        _clientInfo.client.say(_clientInfo.channel, message);
+                    }
+                    catch (e) {
+
+                    }
+                }
+            });
         }
     }
+    catch (e) {
+    }    
 }
