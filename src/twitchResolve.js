@@ -55,50 +55,40 @@ function getRequestHeaders() {
 }
 
 function onStreamsResponse(error, response, body) {
-    try {
-        var json = JSON.parse(body);
-        if (json.error)
-            handleResponseError(response, json, onStreamsResponse);
-        else if (json.data.length > 0) {
-            var stream = json.data[0];
-            var message = stream.title + " [" + stream.viewer_count + "]";
-            postMessageWithGameCategory(stream.game_id, message);
-        }
-    }
-    catch (e) {
-
-    }
+    var stream = getResponseData(error, response, body, onClipsResponse);
+    if (!stream)
+        return;
+    var message = stream.title + " [" + stream.viewer_count + "]";
+    postMessageWithGameCategory(stream.game_id, message);
 }
 
 function onClipsResponse(error, response, body) {
+    var clipInfo = getResponseData(error, response, body, onClipsResponse);
+    if (!clipInfo)
+        return;
+    var message = clipInfo.broadcaster_name + ": " + clipInfo.title + " [" + clipInfo.view_count + "]";
+    postMessageWithGameCategory(clipInfo.game_id, message);
+}
+
+function getResponseData(error, response, body, errorCallback=undefined) {
     try {
         var json = JSON.parse(body);
-        if (json.error)
-            handleResponseError(response, json, onClipsResponse);            
-        else if (json.data.length > 0) {
-            var clipInfo = json.data[0];
-            var message = clipInfo.broadcaster_name + ": " + clipInfo.title + " [" + clipInfo.view_count + "]";
-            postMessageWithGameCategory(clipInfo.game_id, message);
-        }
+        if (json.error && errorCallback)
+            handleResponseError(response, json, errorCallback);            
+        else
+            return json.data[0];
     }
     catch (e) {
-
+        console.log(e.message);
     }    
 }
 
 function postMessageWithGameCategory(game_id, message) {
     sendRequest("https://api.twitch.tv/helix/games?id=" + game_id, (error, response, body) => {
-		if (!error) {
-			try {
-				var json = JSON.parse(body);
-				if (json.data.length > 0)
-					message += " [" + json.data[0].name + "]";
-				_clientInfo.client.say(_clientInfo.channel, message);
-			}
-			catch (e) {
-
-			}
-		}
+        var category = getResponseData(error, response, body);
+        if (category)
+		    message += " [" + category.name + "]";
+		_clientInfo.client.say(_clientInfo.channel, message);
 	});
 }
 
