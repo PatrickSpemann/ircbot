@@ -103,9 +103,9 @@ function postMessageWithGameCategory(game_id, message) {
 }
 
 function handleResponseError(response, bodyAsJson, callback) {
-    console.log("Twitch API: " + bodyAsJson.message);
+    console.log("Twitch API - request failed: " + bodyAsJson.message);
     if (bodyAsJson.status === 401) // Unauthorized - request a new access token and resend the original request
-        requestAccessToken().then(() => sendRequest(response.request.href, callback)).catch(() => {});
+        requestAccessToken().then(() => sendRequest(response.request.href, callback)).catch((error) => console.log(error));
 }
 
 function requestAccessToken() {
@@ -113,14 +113,12 @@ function requestAccessToken() {
         url: "https://id.twitch.tv/oauth2/token?client_id=" + _clientID,
         form: {client_secret: _clientSecret, grant_type: "client_credentials"},
         headers: {"content-type": "application/json"}
-    }).then((response, body) => setAccessToken(response, body)).catch((error) => {});
+    }).then((response, body) => setAccessToken(response, body));
 }
 
 function setAccessToken(response, body) {
     var json = JSON.parse(response.body);
-    if (response.statusCode !== 200) {
-        console.log("Twitch API: " + json.message);
-        return;
-    }
+    if (response.statusCode !== 200)
+        throw "Twitch API - failed to set access token: " + json.message;
     _auth = "Bearer " + json.access_token;
 }
