@@ -19,7 +19,8 @@ module.exports = {
     handleTwitchUrl
 }
 
-function initCredentials (options) {
+function initCredentials (clientInfo, options) {
+    _clientInfo = clientInfo;
     if (!options.twitchClientID || !options.twitchClientSecret)
         console.log("Twitch API: missing credentials in settings.")
     _clientID = options.twitchClientID;
@@ -28,11 +29,44 @@ function initCredentials (options) {
     initExp();
 }
 
+let knownLiveStreams = {};
+
 function initExp() {
-    express_app.get("/", (req, res) => console.log("get received"));
-    express_app.post("/", (req, res) => console.log("post received"));
+    express_app.use(express.json());
+    express_app.get("/*", (req, res) => {
+        console.log("get received");
+        console.log(req.query);
+        try {
+             res.status(200).type('text/plain').send(req.query["hub.challenge"]);
+        } catch (e) {
+            console.log("failed handling get: ", e.message);
+            res.status(500).send();
+		}
+    });
+
+    express_app.post("/*", (req, res) => {
+        console.log("post received");
+        console.log(req.body);
+        try {
+            const data = req.body.data[0];
+            console.log("data", data);
+            const requestId = req.path.split("/")[1];
+            if (!requestId)
+                throw "No request id";
+            // post a going live message if the user wasn't live before
+			if (data && data.type === "live" && (!knownLiveStreams[requestId] || knownLiveStreams[requestId].type !== "live"))
+                _clientInfo.channels.forEach(channel => _clientInfo.client.say(channel, data.user_name + "just went live!"));
+            knownLiveStreams[requestId] = data;    
+            res.status(200).send();
+        } catch (e) {
+            console.log("failed handling post: ", e);
+            res.status(500).send();
+        }
+	});
+    
+
     express_app.listen(port, () => console.log("Listening on port: " + port));
-    subscribe("raizqt");
+    subscribe("morelia__");
 }
 
 function handleTwitchUrl(clientInfo, url) {
@@ -57,7 +91,7 @@ function handleTwitchUrl(clientInfo, url) {
 
 
 function subscribe(channel) {
-    sendRequest("https://api.twitch.tv/helix/streams?user_login=" + channel, getUserId);
+    sendRequest("https://api.twitch.tv/helix/users?login=" + channel, getUserId);
 }
 
 function getUserId(error, response, body) {
@@ -69,18 +103,20 @@ function getUserId(error, response, body) {
     request.post({
         url: "https://api.twitch.tv/helix/webhooks/hub",
         form: {
-            "hub.callback": "http://" + ip.address(),
+            "hub.callback": "http://78a21134a94e.ngrok.io/" + stream.id,
             "hub.mode": "subscribe",
-            "hub.topic": "https://api.twitch.tv/helix/streams?user_id=" + stream.user_id,
+            "hub.topic": "https://api.twitch.tv/helix/streams?user_id=" + stream.id,
             "hub.lease_seconds": 600,
             "hub.secret": "lmao"
         },
         headers: getRequestHeaders()
     }, function (error, response, body) {
     console.log("response:\n" + JSON.stringify(response));
-    if (response.statusCode !== 202) {
-        console.log("Twitch API - failed to subscribe to channel: " + stream.user_name + ", " + JSON.parse(body).message);
-        } 
+    console.log("stream\n",stream);
+    if (response.statusCode === 202)
+        knownLiveStreams[stream.id] = stream;
+    else
+        console.log("Twitch API - failed to subscribe to channel: " + stream.login + ", " + JSON.parse(body).message);
     });
 
 }
