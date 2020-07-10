@@ -1,7 +1,13 @@
 const util = require("util");
 const request = require("request");
+const requestP = util.promisify(request);
 const requestPostP = util.promisify(request.post);
 const URL = require("url-parse");
+
+const ip = require("ip");
+const express = require("express");
+const express_app = express();
+const port = 80;
 
 var _clientInfo = undefined;
 var _clientID = undefined;
@@ -18,6 +24,15 @@ function initCredentials (options) {
         console.log("Twitch API: missing credentials in settings.")
     _clientID = options.twitchClientID;
     _clientSecret = options.twitchClientSecret;
+
+    initExp();
+}
+
+function initExp() {
+    express_app.get("/", (req, res) => console.log("get received"));
+    express_app.post("/", (req, res) => console.log("post received"));
+    express_app.listen(port, () => console.log("Listening on port: " + port));
+    subscribe("raizqt");
 }
 
 function handleTwitchUrl(clientInfo, url) {
@@ -38,6 +53,49 @@ function handleTwitchUrl(clientInfo, url) {
         default:
             return false;
     }
+}
+
+
+function subscribe(channel) {
+    sendRequest("https://api.twitch.tv/helix/streams?user_login=" + channel, getUserId);
+}
+
+function getUserId(error, response, body) {
+    console.log(ip.address());
+    console.log("userid\n" + JSON.stringify(response));
+    let stream = getResponseData(error, response, body, getUserId);
+    if (!stream)
+        return;
+    request.post({
+        url: "https://api.twitch.tv/helix/webhooks/hub",
+        form: {
+            "hub.callback": "http://" + ip.address(),
+            "hub.mode": "subscribe",
+            "hub.topic": "https://api.twitch.tv/helix/streams?user_id=" + stream.user_id,
+            "hub.lease_seconds": 600,
+            "hub.secret": "lmao"
+        },
+        headers: getRequestHeaders()
+    }, function (error, response, body) {
+    console.log("response:\n" + JSON.stringify(response));
+    if (response.statusCode !== 202) {
+        console.log("Twitch API - failed to subscribe to channel: " + stream.user_name + ", " + JSON.parse(body).message);
+        } 
+    });
+
+}
+
+function verifyResponse(error, request, body) {
+    // TODO express handler
+    console.log("request:\n" + JSON.stringify(request));
+    if (body.reason)
+        console.log("sub denied: reason " + body.reason);
+    else
+    request.response({
+        statusCode: 200,
+        challenge: body.challenge,
+        headers: {"content-type": "text/plain"}
+        });
 }
 
 function sendRequest(url, callback) {
