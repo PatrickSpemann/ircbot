@@ -1,6 +1,7 @@
 var utils = require("./ircbot-utils");
 var imdbSearch = require("./imdbSearch");
 var youtubeSearch = require("./youtubeSearch");
+var twitchSubscribe = require("./twitchResolve").handleSubscription;
 var poeSearch = require("./poeSearch");
 var googleSearch = require("./googleSearch");
 var eightball = require("./eightball");
@@ -45,6 +46,14 @@ function executeCommand(command, parameters) {
         case "youtube":
             youtubeSearch(_clientInfo, parameters);
             return "youtube";
+        case "sub":
+        case "subscribe":
+            twitchSubscribe(_clientInfo, "subscribe", parameters);
+            return "subscribe";
+        case "unsub":
+        case "unsubscribe":
+            twitchSubscribe(_clientInfo, "unsubscribe", parameters);
+            return "unsubscribe";
         case "p":
         case "poe":
             poeSearch(_clientInfo, parameters);

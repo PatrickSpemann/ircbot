@@ -3,11 +3,14 @@ const request = require("request");
 const requestP = util.promisify(request);
 const requestPostP = util.promisify(request.post);
 const URL = require("url-parse");
+const path = require("path");
+const schedule = require("node-schedule");
 
 const ip = require("ip");
 const express = require("express");
-const express_app = express();
+const expressApp = express();
 const port = 80;
+const _callbackBaseUrl = "http://6fa1c55e69df.ngrok.io";
 
 var _clientInfo = undefined;
 var _clientID = undefined;
@@ -16,10 +19,11 @@ var _auth = undefined;
 
 module.exports = {
     initCredentials,
-    handleTwitchUrl
+    handleTwitchUrl,
+    handleSubscription
 }
 
-function initCredentials (clientInfo, options) {
+function initCredentials(clientInfo, options) {
     _clientInfo = clientInfo;
     if (!options.twitchClientID || !options.twitchClientSecret)
         console.log("Twitch API: missing credentials in settings.")
@@ -30,43 +34,71 @@ function initCredentials (clientInfo, options) {
 }
 
 let knownLiveStreams = {};
+let pendingResubs = new Map();
+let pendingCommands = new Map();
+
+function scheduleResub(userId, lease_seconds) {
+    console.log("entered resub");
+    if (!pendingResubs.has(userId))
+        return;
+    console.log("resubbing...");
+    let stream = pendingResubs.get(userId);
+    var time = Date.now() + lease_seconds * 1000;
+    schedule.scheduleJob(time, () => subscribe(stream.login));
+    pendingResubs.delete(userId);
+}
 
 function initExp() {
-    express_app.use(express.json());
-    express_app.get("/*", (req, res) => {
+    expressApp.use(express.json());
+    expressApp.get("/*", (req, res) => {
         console.log("get received");
         console.log(req.query);
         try {
-             res.status(200).type('text/plain').send(req.query["hub.challenge"]);
+            const requestId = req.path.split("/")[1];
+            if (!requestId)
+                throw "No request id";
+            const mode = req.query["hub.mode"];
+            switch (mode) {
+                case "denied":
+                    console.log("Twitch API - subscription denied, reason: " + req.query["hub.reason"]);
+                    postPendingCommandHandledMessage(requestId, `Failed to (un)subscribe: ${req.query["hub.reason"]}`);
+                    break;
+                case "subscribe":
+                    scheduleResub(requestId, req.query["hub.lease_seconds"]);
+                    // fall-through
+                case "unsubscribe":
+                    postPendingCommandHandledMessage(requestId, `Successfully ${mode}d.`)
+                    res.status(200).type('text/plain').send(req.query["hub.challenge"]);
+                    break;
+                default:
+                    throw "Unexpected mode: " + mode;
+            }
         } catch (e) {
             console.log("failed handling get: ", e.message);
             res.status(500).send();
-		}
+        }
     });
 
-    express_app.post("/*", (req, res) => {
+    expressApp.post("/*", (req, res) => {
         console.log("post received");
         console.log(req.body);
         try {
             const data = req.body.data[0];
-            console.log("data", data);
             const requestId = req.path.split("/")[1];
             if (!requestId)
                 throw "No request id";
             // post a going live message if the user wasn't live before
-			if (data && data.type === "live" && (!knownLiveStreams[requestId] || knownLiveStreams[requestId].type !== "live"))
-                _clientInfo.channels.forEach(channel => _clientInfo.client.say(channel, data.user_name + "just went live!"));
-            knownLiveStreams[requestId] = data;    
+            if (data && data.type === "live" && (!knownLiveStreams[requestId] || knownLiveStreams[requestId].type !== "live"))
+                _clientInfo.channels.forEach(channel => _clientInfo.client.say(channel, data.user_name + " just went live!"));
+            knownLiveStreams[requestId] = data;
             res.status(200).send();
         } catch (e) {
             console.log("failed handling post: ", e);
             res.status(500).send();
         }
-	});
-    
+    });
 
-    express_app.listen(port, () => console.log("Listening on port: " + port));
-    subscribe("morelia__");
+    expressApp.listen(port, () => console.log("Listening on port: " + port));
 }
 
 function handleTwitchUrl(clientInfo, url) {
@@ -89,49 +121,90 @@ function handleTwitchUrl(clientInfo, url) {
     }
 }
 
+function handleSubscription(clientInfo, mode, params) {
+    console.log(params);
+    _clientInfo = clientInfo;
+    const userLogin = params.split(" ")[0];
+    if (!userLogin) {
+        _clientInfo.client.say(_clientInfo.channel, `Usage: !${mode} <channelName>`);
+        return;
+    }
 
-function subscribe(channel) {
-    sendRequest("https://api.twitch.tv/helix/users?login=" + channel, getUserId);
+    pendingCommands.set(userLogin.toLowerCase(), clientInfo);
+
+    switch (mode) {
+        case "subscribe":
+            subscribe(userLogin, true);
+            break;
+        case "unsubscribe":
+            unsubscribe(userLogin);
+            break;
+        default:
+            console.log("Twitch API - Unknown subscription mode.");
+            break;
+    }
 }
 
-function getUserId(error, response, body) {
-    console.log(ip.address());
-    console.log("userid\n" + JSON.stringify(response));
-    let stream = getResponseData(error, response, body, getUserId);
+function subscribe(userLogin) {
+    sendRequest("https://api.twitch.tv/helix/users?login=" + userLogin, onSubscriptionResponse);
+}
+
+function unsubscribe(userLogin) {
+    sendRequest("https://api.twitch.tv/helix/users?login=" + userLogin, onUnsubscriptionResponse);
+}
+
+function onSubscriptionResponse(error, response, body) {
+    sendSubscriptionRequest(error, response, body, "subscribe", onSubscriptionResponse);
+}
+
+function onUnsubscriptionResponse(error, response, body) {
+    sendSubscriptionRequest(error, response, body, "unsubscribe", onUnsubscriptionResponse);
+}
+
+function sendSubscriptionRequest(error, response, body, mode, callback) {
+    console.log("userid\n", JSON.stringify(response));
+    let stream = getResponseData(error, response, body, callback);
     if (!stream)
         return;
+        
+    if (!pendingResubs.has(stream.id))
+        pendingResubs.set(stream.id, stream);
+
+    const loginToLower = stream.login.toLowerCase();
+    if (pendingCommands.has(loginToLower)) {
+        pendingCommands.set(stream.id, pendingCommands.get(loginToLower));
+        pendingCommands.delete(loginToLower);
+    }
+
+    const url = new URL(`/${stream.id}`, _callbackBaseUrl);
+    console.log("path\n", url.href);
     request.post({
         url: "https://api.twitch.tv/helix/webhooks/hub",
         form: {
-            "hub.callback": "http://78a21134a94e.ngrok.io/" + stream.id,
-            "hub.mode": "subscribe",
+            "hub.callback": url.href,
+            "hub.mode": mode,
             "hub.topic": "https://api.twitch.tv/helix/streams?user_id=" + stream.id,
-            "hub.lease_seconds": 600,
+            "hub.lease_seconds": 10, // max 864000
             "hub.secret": "lmao"
         },
         headers: getRequestHeaders()
     }, function (error, response, body) {
-    console.log("response:\n" + JSON.stringify(response));
-    console.log("stream\n",stream);
-    if (response.statusCode === 202)
-        knownLiveStreams[stream.id] = stream;
-    else
-        console.log("Twitch API - failed to subscribe to channel: " + stream.login + ", " + JSON.parse(body).message);
+        console.log("stream\n", stream);
+        if (response.statusCode === 202)
+            knownLiveStreams[stream.id] = stream;
+        else {
+            console.log("Twitch API - failed to subscribe to channel: " + stream.login + ", " + JSON.parse(body).message);
+            postPendingCommandHandledMessage(stream.id, `Failed to ${mode}.`)
+        }
     });
-
 }
 
-function verifyResponse(error, request, body) {
-    // TODO express handler
-    console.log("request:\n" + JSON.stringify(request));
-    if (body.reason)
-        console.log("sub denied: reason " + body.reason);
-    else
-    request.response({
-        statusCode: 200,
-        challenge: body.challenge,
-        headers: {"content-type": "text/plain"}
-        });
+function postPendingCommandHandledMessage(streamId, message) {
+    if (pendingCommands.has(streamId)) {
+        const clientInfo = pendingCommands.get(streamId)
+        clientInfo.client.say(clientInfo.channel, message);
+        pendingCommands.delete(streamId);
+    }
 }
 
 function sendRequest(url, callback) {
@@ -145,7 +218,7 @@ function getRequestHeaders() {
     return {
         "Authorization": _auth,
         "Client-ID": _clientID
-	}
+    }
 }
 
 function onStreamsResponse(error, response, body) {
@@ -164,26 +237,26 @@ function onClipsResponse(error, response, body) {
     postMessageWithGameCategory(clipInfo.game_id, message);
 }
 
-function getResponseData(error, response, body, errorCallback=undefined) {
+function getResponseData(error, response, body, errorCallback = undefined) {
     try {
         var json = JSON.parse(body);
         if (json.error && errorCallback)
-            handleResponseError(response, json, errorCallback);            
+            handleResponseError(response, json, errorCallback);
         else
             return json.data[0];
     }
     catch (e) {
         console.log(e.message);
-    }    
+    }
 }
 
 function postMessageWithGameCategory(game_id, message) {
     sendRequest("https://api.twitch.tv/helix/games?id=" + game_id, (error, response, body) => {
         var category = getResponseData(error, response, body);
         if (category)
-		    message += " [" + category.name + "]";
-		_clientInfo.client.say(_clientInfo.channel, message);
-	});
+            message += " [" + category.name + "]";
+        _clientInfo.client.say(_clientInfo.channel, message);
+    });
 }
 
 function handleResponseError(response, bodyAsJson, callback) {
@@ -195,8 +268,8 @@ function handleResponseError(response, bodyAsJson, callback) {
 function requestAccessToken() {
     return requestPostP({
         url: "https://id.twitch.tv/oauth2/token?client_id=" + _clientID,
-        form: {client_secret: _clientSecret, grant_type: "client_credentials"},
-        headers: {"content-type": "application/json"}
+        form: { client_secret: _clientSecret, grant_type: "client_credentials" },
+        headers: { "content-type": "application/json" }
     }).then((response, body) => setAccessToken(response, body));
 }
 
