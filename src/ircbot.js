@@ -35,7 +35,7 @@ module.exports.start = function (options) {
     seenState.registerEvents(_client);
     _client.addListener("error", onError);
 
-    twitchResolve.initCredentials(composeClientInfo(), options);
+    twitchResolve.initTwitchApi(composeClientInfo(), options);
 
     timer.restore(_client);
     setInterval(renameSelf, 1000 * 60 * 5 /* 5 minutes */);
