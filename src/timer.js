@@ -29,7 +29,7 @@ module.exports = {
 			if (job.time < now) {
 				toBeRemoved.push(job);
 			} else {
-				schedule.scheduleJob("timer" + new Date(job.time), function (x, y) {
+				schedule.scheduleJob(new Date(job.time), function (x, y) {
 					client.say(x, y);
 				}.bind(null, job.channel, job.message));
 			}
@@ -95,7 +95,7 @@ function parseMessage(array) {
 
 function addTimer(clientInfo, _time, _message) {
 	var date = new Date(_time);
-	schedule.scheduleJob("timer" + date, function () {
+	schedule.scheduleJob(date, function () {
 		clientInfo.client.say(clientInfo.channel, _message);
 	});
 
