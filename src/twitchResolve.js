@@ -8,6 +8,7 @@ const fs = require("fs-extra");
 const ip = require("ip");
 const express = require("express");
 const expressApp = express();
+const crypto = require("crypto");
 const port = 80;
 const _callbackBaseUrl = "http://4e9e6bf43e90.ngrok.io";
 
@@ -118,8 +119,26 @@ function onUnsubscriptionCancelResub(id) {
 }
 
 function initExp() {
-    expressApp.use(express.json());
-    expressApp.get("/*", (req, res) => {
+    expressApp.use(express.json({
+        verify: function (req, res, buf, encoding) {
+            // https://www.w3.org/TR/websub/#authenticated-content-distribution
+            req.twitch_hub = false;
+            if (req.headers) {
+                const xHubSignature = req.headers["x-hub-signature"];
+                if (!xHubSignature)
+                    return;
+                req.twitch_hub = true;
+    
+                let xHub = xHubSignature.split('=');
+                let method = xHub[0];
+                req.twitch_hex = crypto.createHmac(method, _clientSecret).update(buf).digest('hex');
+                req.twitch_signature = xHub[1];
+                return req.twitch_hex === req.twitch_signature;
+            }
+        }
+    }));
+
+    expressApp.route("/*").get((req, res) => {
         console.log("get received");
         console.log(req.query);
         try {
@@ -144,15 +163,16 @@ function initExp() {
                 throw "Unexpected mode: " + mode;
 
         } catch (e) {
-            console.log("failed handling get: ", e.message);
+            console.log("failed handling get: ", e);
             res.status(500).send();
         }
-    });
-
-    expressApp.post("/*", (req, res) => {
+    }).post((req, res) => {
         console.log("post received");
         console.log(req.body);
         try {
+            if (!isRequestVerified(req))
+                throw "Unverified request";
+
             const data = req.body.data[0];
             const requestId = req.path.split("/")[1];
             if (!requestId)
@@ -167,6 +187,10 @@ function initExp() {
             res.status(500).send();
         }
     });
+
+    function isRequestVerified(req) {
+        return req.twitch_hub && req.twitch_hex === req.twitch_signature;
+    }
 
     expressApp.listen(port, () => console.log("Listening on port: " + port));
 }
@@ -276,7 +300,7 @@ function sendSubscriptionRequest(error, response, body, mode, callback) {
             "hub.callback": url.href,
             "hub.mode": mode,
             "hub.topic": "https://api.twitch.tv/helix/streams?user_id=" + stream.id,
-            "hub.lease_seconds": 600, // max 864000
+            "hub.lease_seconds": 10, // max 864000
             "hub.secret": _clientSecret
         },
         headers: getRequestHeaders()
