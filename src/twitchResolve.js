@@ -1,16 +1,17 @@
 const util = require("util");
 const request = require("request");
-const requestP = util.promisify(request);
 const requestPostP = util.promisify(request.post);
 const URL = require("url-parse");
-const path = require("path");
 const schedule = require("node-schedule");
+const fs = require("fs-extra");
 
 const ip = require("ip");
 const express = require("express");
 const expressApp = express();
 const port = 80;
-const _callbackBaseUrl = "http://6fa1c55e69df.ngrok.io";
+const _callbackBaseUrl = "http://4e9e6bf43e90.ngrok.io";
+
+const subsFilePath = "./twitchSubs.json";
 
 var _clientInfo = undefined;
 var _clientID = undefined;
@@ -20,8 +21,9 @@ var _auth = undefined;
 module.exports = {
     initCredentials,
     handleTwitchUrl,
-    handleSubscription
-}
+    handleSubscription,
+    listActiveSubscriptions
+};
 
 function initCredentials(clientInfo, options) {
     _clientInfo = clientInfo;
@@ -31,21 +33,88 @@ function initCredentials(clientInfo, options) {
     _clientSecret = options.twitchClientSecret;
 
     initExp();
+    restoreSubscriptions();
 }
+
+// TODO rate limits
+// TODO subs may be temporarily lost if ip changes
 
 let knownLiveStreams = {};
 let pendingResubs = new Map();
 let pendingCommands = new Map();
 
-function scheduleResub(userId, lease_seconds) {
+function restoreSubscriptions() {
+	try {
+        let subData = fs.readJsonSync(subsFilePath);
+        for (let channelName in subData) {
+            const channelInfo =subData[channelName];
+            if (channelInfo.time < Date.now())
+                subscribe(channelName);
+            else
+                scheduleResub(channelInfo.time, channelInfo.id, channelName);
+        }
+	}
+	catch (e) {
+		console.log("no twitch subscriptions to restore");
+	}
+}
+function saveSubscriptionToFile(time, id, channelName) {
+	try {
+        let subData = fs.readJsonSync(subsFilePath, {throws: false});
+        if (!subData)
+            subData = {};
+        subData[channelName] = {id: id, time: time };
+		fs.writeJsonSync(subsFilePath, subData);
+	}
+	catch (e) {
+		console.log("error writing twitch subscriptions to file: ", e);
+	}
+}
+
+function deleteSubscriptionFromFile (id) {
+    try {
+        let subData = fs.readJsonSync(subsFilePath, {throws: false});
+        if (!subData)
+            subData = {};
+        let channels = [];
+         for (let channel in subData) {
+           if (subData[channel].id === id)
+               channels.push(channel);
+        }
+        channels.forEach(c => delete subData[c]);
+		fs.writeJsonSync(subsFilePath, subData);
+	}
+	catch (e) {
+		console.log("error writing twitch subscriptions to file: ", e);
+	}
+}
+
+function isSubscribed(channelName) {
+        let subData = fs.readJsonSync(subsFilePath, {throws: false});
+        if (!subData)
+            subData = {};
+        return subData[channelName] !== undefined;
+}
+
+function onSubscriptionScheduleResub(userId, lease_seconds) {
     console.log("entered resub");
     if (!pendingResubs.has(userId))
         return;
     console.log("resubbing...");
     let stream = pendingResubs.get(userId);
-    var time = Date.now() + lease_seconds * 1000;
-    schedule.scheduleJob(time, () => subscribe(stream.login));
+    let time = Date.now() + lease_seconds * 1000;
+    saveSubscriptionToFile(time, stream.id, stream.login);
+    scheduleResub(time, stream.id, stream.login);
     pendingResubs.delete(userId);
+}
+
+function scheduleResub (time, id, login) {
+    schedule.scheduleJob(id.toString(), time, () => subscribe(login));
+}
+
+function onUnsubscriptionCancelResub(id) {
+    deleteSubscriptionFromFile(id);
+    schedule.cancelJob(id.toString());
 }
 
 function initExp() {
@@ -57,22 +126,24 @@ function initExp() {
             const requestId = req.path.split("/")[1];
             if (!requestId)
                 throw "No request id";
+
             const mode = req.query["hub.mode"];
-            switch (mode) {
-                case "denied":
-                    console.log("Twitch API - subscription denied, reason: " + req.query["hub.reason"]);
-                    postPendingCommandHandledMessage(requestId, `Failed to (un)subscribe: ${req.query["hub.reason"]}`);
-                    break;
-                case "subscribe":
-                    scheduleResub(requestId, req.query["hub.lease_seconds"]);
-                    // fall-through
-                case "unsubscribe":
-                    postPendingCommandHandledMessage(requestId, `Successfully ${mode}d.`)
-                    res.status(200).type('text/plain').send(req.query["hub.challenge"]);
-                    break;
-                default:
-                    throw "Unexpected mode: " + mode;
+            if (mode === "denied") {
+                console.log("Twitch API - subscription denied, reason: " + req.query["hub.reason"]);
+                pendingCommandHandled(requestId, `Failed to (un)subscribe: ${req.query["hub.reason"]}`);
+                return;
             }
+            else if (mode === "subscribe" || mode === "unsubscribe") {
+                if (mode === "subscribe")
+                    onSubscriptionScheduleResub(requestId, req.query["hub.lease_seconds"]);
+                else
+                    onUnsubscriptionCancelResub(requestId);
+
+                    pendingCommandHandled(requestId, `Successfully ${mode}d.`, true);
+                    res.status(200).type('text/plain').send(req.query["hub.challenge"]);
+            } else
+                throw "Unexpected mode: " + mode;
+
         } catch (e) {
             console.log("failed handling get: ", e.message);
             res.status(500).send();
@@ -130,7 +201,12 @@ function handleSubscription(clientInfo, mode, params) {
         return;
     }
 
-    pendingCommands.set(userLogin.toLowerCase(), clientInfo);
+    if (mode === "subscribe" && isSubscribed(userLogin)) {
+        _clientInfo.client.say(_clientInfo.channel, `Already subscribed to ${userLogin}.`);
+        return;
+    }
+
+    pendingCommands.set(userLogin.toLowerCase(), {clientInfo, mode});
 
     switch (mode) {
         case "subscribe":
@@ -143,6 +219,25 @@ function handleSubscription(clientInfo, mode, params) {
             console.log("Twitch API - Unknown subscription mode.");
             break;
     }
+}
+
+function listActiveSubscriptions(clientInfo) {
+    _clientInfo = clientInfo;
+    try {
+        let subData = fs.readJsonSync(subsFilePath, { throws: false });
+        if (!subData)
+            subData = {};
+        let channels = [];
+        for (let channelName in subData)
+            channels.push(channelName);
+        let message = channels.length > 0 ?
+            `Active Twitch subscriptions: ${channels.join(", ")}`
+            : "No active Twitch subscriptions.";
+        _clientInfo.client.say(_clientInfo.channel, message);
+	}
+	catch (e) {
+		console.log("oh no", e);
+	}
 }
 
 function subscribe(userLogin) {
@@ -194,16 +289,22 @@ function sendSubscriptionRequest(error, response, body, mode, callback) {
             knownLiveStreams[stream.id] = stream;
         else {
             console.log("Twitch API - failed to subscribe to channel: " + stream.login + ", " + JSON.parse(body).message);
-            postPendingCommandHandledMessage(stream.id, `Failed to ${mode}.`)
+            pendingCommandHandled(stream.id, `Failed to ${mode}.`)
         }
     });
 }
 
-function postPendingCommandHandledMessage(streamId, message) {
+function pendingCommandHandled(streamId, message, success=false) {
     if (pendingCommands.has(streamId)) {
-        const clientInfo = pendingCommands.get(streamId)
-        clientInfo.client.say(clientInfo.channel, message);
+        const commandInfo = pendingCommands.get(streamId)
+        commandInfo.clientInfo.client.say(commandInfo.clientInfo.channel, message);
         pendingCommands.delete(streamId);
+        if (success) {
+            if (commandInfo.mode === "subscribe")
+                ; // save
+            else if (commandInfo.mode === "unsubscribe")
+                ; // delete
+        }
     }
 }
 
