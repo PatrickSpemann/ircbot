@@ -33,6 +33,9 @@ This file must contain all the properties and data types as this example:
 `statsResponse` is optional and, if present, will be sent to the channel when a user types `!stats`  
 `quotesResponse` is optional and, if present, will be sent to the channel when a user types `!quotes`
 
+## Notes
+* Port 80 needs to be open and forwarded for the Twitch API to work.
+
 ## TODOs
 * Fix async (members)
 * prevent spam by adding cache of last sent messages

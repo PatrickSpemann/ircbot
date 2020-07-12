@@ -4,21 +4,21 @@ const requestPostP = util.promisify(request.post);
 const URL = require("url-parse");
 const schedule = require("node-schedule");
 const fs = require("fs-extra");
-const ip = require("ip");
+const publicIp = require("public-ip");
 const express = require("express");
 const expressApp = express();
 const crypto = require("crypto");
 
 const _port = 80;
-const _callbackBaseUrl = `http://${ip.address()}`;
-const _lease_seconds = 60; // max 864000
+const _lease_seconds = 86400; // max 864000 (10d)
 const _subsFilePath = "./twitchSubs.json";
-const _verboseLogs = true;
+const _verboseLogs = false;
 
 let _clientInfo = undefined;
 let _clientID = undefined;
 let _clientSecret = undefined;
 let _auth = undefined;
+let _callbackBaseUrl = undefined;
 
 let _knownLiveStreams = {};
 let _pendingResubs = new Map();
@@ -33,14 +33,14 @@ module.exports = {
     listActiveSubscriptions
 };
 
-function initTwitchApi(clientInfo, options) {
-    console.log(_callbackBaseUrl);
+async function initTwitchApi(clientInfo, options) {
     _clientInfo = clientInfo;
     if (!options.twitchClientID || !options.twitchClientSecret)
         console.log("Twitch API - missing credentials in settings.")
     _clientID = options.twitchClientID;
     _clientSecret = options.twitchClientSecret;
 
+    _callbackBaseUrl = `http://${await publicIp.v4()}`;
     initExpressApp();
     requestAccessToken().then(() => restoreSubscriptions()).catch((error) => console.log(error));
 }
@@ -312,6 +312,9 @@ function sendSubscriptionRequest(error, response, body, mode, callback) {
     }
 
     const url = new URL(`/${stream.id}`, _callbackBaseUrl);
+    if (_verboseLogs)
+        console.log("Callback url:", url.href);
+        
     request.post({
         url: "https://api.twitch.tv/helix/webhooks/hub",
         form: {
@@ -325,7 +328,7 @@ function sendSubscriptionRequest(error, response, body, mode, callback) {
     }, function (error, response, body) {
         if (response.statusCode === 202) {
             if (_verboseLogs)
-                console.log("Twitch API - (Un)subscribed to stream:\n", stream);
+                console.log("Twitch API - Updated stream subscription:\n", stream);
         } else {
             console.log("Twitch API - failed to subscribe to channel: " + stream.login + ", " + JSON.parse(body).message);
             pendingCommandHandled(stream.id, `Failed to ${mode}.`)

@@ -20,6 +20,9 @@ Post these commands in any channel where the bot is present
 * `!w [location]` or `weather [location]`: Posts weather data for the supplied location. Location can be a city or a ZIP code.
 * `!message` or `msg`: Sends a message to a user the next time he joins the channel. Example: `!message Kirill Hello!`.
 * `!uman`: ?
+* `sub` or `subscribe`: Subscribe to a twitch channel to be notified when it goes live. Example: `!sub uman`
+* `unsub` or `unsubscribe`: Unsubscribe from a twitch channel to no longer be notified when it goes live. Example: `!unsub xqcow`
+* `twitchsubs`: List all of the currently subscribed channels.
 
 # Remote Control
 You can remote control the bot to some extent by sending it private messages (queries).  
