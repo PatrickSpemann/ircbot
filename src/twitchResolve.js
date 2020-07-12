@@ -44,6 +44,7 @@ let pendingResubs = new Map();
 let pendingCommands = new Map();
 
 function restoreSubscriptions() {
+    // we only immediately resubscribe if the old subscription has expired, this does mean we may lose some events if the callback url changed
 	try {
         let subData = fs.readJsonSync(subsFilePath);
         for (let channelName in subData) {
@@ -97,11 +98,10 @@ function isSubscribed(channelName) {
 }
 
 function onSubscriptionScheduleResub(userId, lease_seconds) {
-    console.log("entered resub");
     if (!pendingResubs.has(userId))
         return;
-    console.log("resubbing...");
     let stream = pendingResubs.get(userId);
+    console.log("Scheduling resub for: ", stream.login);
     let time = Date.now() + lease_seconds * 1000;
     saveSubscriptionToFile(time, stream.id, stream.login);
     scheduleResub(time, stream.id, stream.login);
@@ -131,7 +131,6 @@ function initExp() {
             if (mode === "denied") {
                 console.log("Twitch API - subscription denied, reason: " + req.query["hub.reason"]);
                 pendingCommandHandled(requestId, `Failed to (un)subscribe: ${req.query["hub.reason"]}`);
-                return;
             }
             else if (mode === "subscribe" || mode === "unsubscribe") {
                 if (mode === "subscribe")
@@ -160,7 +159,7 @@ function initExp() {
                 throw "No request id";
             // post a going live message if the user wasn't live before
             if (data && data.type === "live" && (!knownLiveStreams[requestId] || knownLiveStreams[requestId].type !== "live"))
-                _clientInfo.channels.forEach(channel => _clientInfo.client.say(channel, data.user_name + " just went live!"));
+                _clientInfo.channels.forEach(channel => _clientInfo.client.say(channel, `https://twitch.tv/${data.user_name.toLowerCase()} just went live! Title: ${data.title}`));
             knownLiveStreams[requestId] = data;
             res.status(200).send();
         } catch (e) {
@@ -257,7 +256,6 @@ function onUnsubscriptionResponse(error, response, body) {
 }
 
 function sendSubscriptionRequest(error, response, body, mode, callback) {
-    console.log("userid\n", JSON.stringify(response));
     let stream = getResponseData(error, response, body, callback);
     if (!stream)
         return;
@@ -272,22 +270,20 @@ function sendSubscriptionRequest(error, response, body, mode, callback) {
     }
 
     const url = new URL(`/${stream.id}`, _callbackBaseUrl);
-    console.log("path\n", url.href);
     request.post({
         url: "https://api.twitch.tv/helix/webhooks/hub",
         form: {
             "hub.callback": url.href,
             "hub.mode": mode,
             "hub.topic": "https://api.twitch.tv/helix/streams?user_id=" + stream.id,
-            "hub.lease_seconds": 10, // max 864000
-            "hub.secret": "lmao"
+            "hub.lease_seconds": 600, // max 864000
+            "hub.secret": _clientSecret
         },
         headers: getRequestHeaders()
     }, function (error, response, body) {
-        console.log("stream\n", stream);
-        if (response.statusCode === 202)
-            knownLiveStreams[stream.id] = stream;
-        else {
+        if (response.statusCode === 202) {
+            console.log("(Un)subscribed to stream:\n", stream);
+        } else {
             console.log("Twitch API - failed to subscribe to channel: " + stream.login + ", " + JSON.parse(body).message);
             pendingCommandHandled(stream.id, `Failed to ${mode}.`)
         }
