@@ -68,7 +68,7 @@ function initExpressApp() {
                 fail();
 
             function fail() {
-                status(200).send();
+                res.status(200).send();
                 throw "Twitch API - unverified request.";
             }
         }
