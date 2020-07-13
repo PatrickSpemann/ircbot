@@ -3,6 +3,7 @@ var imdbSearch = require("./imdbSearch");
 var youtubeSearch = require("./youtubeSearch");
 var twitchSubscribe = require("./twitchResolve").handleSubscription;
 var twitchListSubscriptions = require("./twitchResolve").listActiveSubscriptions;
+var listKnownLiveStreams = require("./twitchResolve").listKnownLiveStreams;
 var poeSearch = require("./poeSearch");
 var googleSearch = require("./googleSearch");
 var eightball = require("./eightball");
@@ -58,6 +59,9 @@ function executeCommand(command, parameters) {
         case "twitchsubs":
             twitchListSubscriptions(_clientInfo);
             return "twitchsubs";
+        case "live":
+            listKnownLiveStreams(_clientInfo);
+            return "live";
         case "p":
         case "poe":
             poeSearch(_clientInfo, parameters);

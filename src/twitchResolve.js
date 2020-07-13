@@ -9,9 +9,9 @@ const express = require("express");
 const expressApp = express();
 const crypto = require("crypto");
 
-const _port = 80;
 const _lease_seconds = 86400; // max 864000 (10d)
 const _subsFilePath = "./twitchSubs.json";
+const _route = "/TwitchSubs/";
 const _verboseLogs = false;
 
 let _clientInfo = undefined;
@@ -19,6 +19,7 @@ let _clientID = undefined;
 let _clientSecret = undefined;
 let _auth = undefined;
 let _callbackBaseUrl = undefined;
+let _port = 80;
 
 let _knownLiveStreams = {};
 let _pendingResubs = new Map();
@@ -30,7 +31,8 @@ module.exports = {
     initTwitchApi,
     handleTwitchUrl,
     handleSubscription,
-    listActiveSubscriptions
+    listActiveSubscriptions,
+    listKnownLiveStreams
 };
 
 async function initTwitchApi(clientInfo, options) {
@@ -39,6 +41,9 @@ async function initTwitchApi(clientInfo, options) {
         console.log("Twitch API - missing credentials in settings.")
     _clientID = options.twitchClientID;
     _clientSecret = options.twitchClientSecret;
+    if (!options.port)
+        console.log("Twitch API - missing port.");
+    _port = options.port;
 
     _callbackBaseUrl = `http://${await publicIp.v4()}`;
     initExpressApp();
@@ -46,31 +51,37 @@ async function initTwitchApi(clientInfo, options) {
 }
 
 function initExpressApp() {
-    expressApp.use(express.json({
+    let appRoute = _route + '*';
+    expressApp.use(appRoute, express.json({
         verify: function (req, res, buf, encoding) {
             // https://www.w3.org/TR/websub/#authenticated-content-distribution
-            req.twitch_hub = false;
             if (!req.headers)
-                return;
-
+                fail();
             const xHubSignature = req.headers["x-hub-signature"];
             if (!xHubSignature)
-                return;
-            req.twitch_hub = true;
+                fail();
             let xHub = xHubSignature.split('=');
             let method = xHub[0];
-            req.twitch_hex = crypto.createHmac(method, _clientSecret).update(buf).digest('hex');
-            req.twitch_signature = xHub[1];
+            let twitch_hex = crypto.createHmac(method, _clientSecret).update(buf).digest('hex');
+            let twitch_signature = xHub[1];
+            if (twitch_hex !== twitch_signature) 
+                fail();
+
+            function fail() {
+                status(200).send();
+                throw "Twitch API - unverified request.";
+            }
         }
     }));
 
-    expressApp.route("/*").get((req, res) => {
+    expressApp.route(appRoute).get((req, res) => {
         if (_verboseLogs) {
             console.log("Twitch API - GET received");
+            console.log(req.path);
             console.log(req.query);
         }
         try {
-            const requestId = req.path.split("/")[1];
+            const requestId = req.path.split("/")[2];
             if (!requestId)
                 throw "No request id";
 
@@ -97,14 +108,12 @@ function initExpressApp() {
     }).post((req, res) => {
         if (_verboseLogs) {
             console.log("Twitch API - POST received");
+            console.log(req.path);
             console.log(req.body);
         }
         try {
-            if (!isRequestVerified(req))
-                throw "Unverified request";
-
             const data = req.body.data[0];
-            const requestId = req.path.split("/")[1];
+            const requestId = req.path.split("/")[2];
             if (!requestId)
                 throw "No request id";
             // post a going live message if the user wasn't live before
@@ -117,10 +126,6 @@ function initExpressApp() {
             res.status(500).send();
         }
     });
-
-    function isRequestVerified(req) {
-        return req.twitch_hub && req.twitch_hex === req.twitch_signature;
-    }
 
     expressApp.listen(_port, () => console.log("Listening on port: " + _port));
 }
@@ -272,11 +277,30 @@ function listActiveSubscriptions(clientInfo) {
         for (let channelName in subData)
             channels.push(channelName);
         let message = channels.length > 0 ?
-            `Active Twitch subscriptions: ${channels.join(", ")}`
-            : "No active Twitch subscriptions.";
+            `Active Twitch subscriptions: ${channels.join(", ")}`:
+            "No active Twitch subscriptions.";
         _clientInfo.client.say(_clientInfo.channel, message);
     }
     catch (e) {
+        console.log(e);
+    }
+}
+
+function listKnownLiveStreams (clientInfo) {
+    _clientInfo = clientInfo;
+    // this won't work for streams that were live before the bot was started ¯\_(ツ)_/¯
+    try {
+        let liveChannels = [];
+        for (const id in _knownLiveStreams) {
+            const stream = _knownLiveStreams[id];
+            if (stream && stream.type === "live")
+                liveChannels.push(`https://twitch.tv/${stream.user_name.toLowerCase()}`);
+        }
+        let message = liveChannels.length > 0 ?
+            `Active live streams: ${liveChannels.join(", ")}` :
+            "No channels are currently live.";
+        _clientInfo.client.say(_clientInfo.channel, message);
+    } catch (e) {
         console.log(e);
     }
 }
@@ -311,7 +335,7 @@ function sendSubscriptionRequest(error, response, body, mode, callback) {
         _pendingCommands.delete(loginToLower);
     }
 
-    const url = new URL(`/${stream.id}`, _callbackBaseUrl);
+    const url = new URL(`${_route}${stream.id}`, _callbackBaseUrl);
     if (_verboseLogs)
         console.log("Callback url:", url.href);
         
