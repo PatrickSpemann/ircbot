@@ -55,22 +55,18 @@ function initExpressApp() {
     expressApp.use(appRoute, express.json({
         verify: function (req, res, buf, encoding) {
             // https://www.w3.org/TR/websub/#authenticated-content-distribution
+            req.twitch_hub = false;
             if (!req.headers)
-                fail();
+                return;
+
             const xHubSignature = req.headers["x-hub-signature"];
             if (!xHubSignature)
-                fail();
+                return;
+            req.twitch_hub = true;
             let xHub = xHubSignature.split('=');
             let method = xHub[0];
-            let twitch_hex = crypto.createHmac(method, _clientSecret).update(buf).digest('hex');
-            let twitch_signature = xHub[1];
-            if (twitch_hex !== twitch_signature) 
-                fail();
-
-            function fail() {
-                res.status(200).send();
-                throw "Twitch API - unverified request.";
-            }
+            req.twitch_hex = crypto.createHmac(method, _clientSecret).update(buf).digest('hex');
+            req.twitch_signature = xHub[1];
         }
     }));
 
@@ -112,6 +108,9 @@ function initExpressApp() {
             console.log(req.body);
         }
         try {
+            if (!isRequestVerified(req))
+                throw "Unverified request";
+
             const data = req.body.data[0];
             const requestId = req.path.split("/")[2];
             if (!requestId)
@@ -126,6 +125,10 @@ function initExpressApp() {
             res.status(500).send();
         }
     });
+
+    function isRequestVerified(req) {
+        return req.twitch_hub && req.twitch_hex === req.twitch_signature;
+    }
 
     expressApp.listen(_port, () => console.log("Listening on port: " + _port));
 }
