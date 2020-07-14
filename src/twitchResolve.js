@@ -33,7 +33,8 @@ function initCredentials (options) {
     _clientSecret = options.twitchClientSecret;
     if (!options.port)
         console.log("Twitch API - missing port.");
-    _port = options.port;
+    else
+        _port = options.port;
 
     _callbackBaseUrl = (options.callbackBaseUrl) ? (options.callbackBaseUrl) : `http://${await publicIp.v4()}`;
     initExpressApp();
