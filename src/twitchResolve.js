@@ -36,7 +36,7 @@ function initCredentials (options) {
     else
         _port = options.port;
 
-    _callbackBaseUrl = (options.callbackBaseUrl) ? (options.callbackBaseUrl) : `http://${await publicIp.v4()}`;
+    _callbackBaseUrl = (options.callbackBaseUrl) ? (options.callbackBaseUrl) : `http://${options.ipv6 ? await publicIp.v6() : await publicIp.v4()}`;
     initExpressApp();
     requestAccessToken().then(() => restoreSubscriptions()).catch((error) => console.log(error));
 }
