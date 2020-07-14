@@ -35,8 +35,7 @@ function initCredentials (options) {
         console.log("Twitch API - missing port.");
     else
         _port = options.port;
-
-    _callbackBaseUrl = (options.callbackBaseUrl) ? (options.callbackBaseUrl) : `http://${options.ipv6 ? await publicIp.v6() : await publicIp.v4()}`;
+    _callbackBaseUrl = (options.callbackBaseUrl) ? (options.callbackBaseUrl) : `http://${await publicIp.v4().catch(e => console.log(e))}`;
     initExpressApp();
     requestAccessToken().then(() => restoreSubscriptions()).catch((error) => console.log(error));
 }
@@ -121,7 +120,9 @@ function initExpressApp() {
         return req.twitch_hub && req.twitch_hex === req.twitch_signature;
     }
 
-    expressApp.listen(_port, () => console.log("Listening on port: " + _port));
+    expressApp.listen(_port, "0.0.0.0", () => console.log("Listening on port: " + _port)).on("error", function(error) {
+        console.log("Twitch API - failed to init server:", error);
+    });
 }
 
 function onSubscriptionScheduleResub(userId, lease_seconds) {
@@ -223,6 +224,142 @@ function handleTwitchUrl(clientInfo, url) {
             return true;
         default:
             return false;
+    }
+}
+
+function handleSubscription(clientInfo, mode, params) {
+    _clientInfo = clientInfo;
+    const userLogin = params.split(" ")[0];
+    if (!userLogin) {
+        _clientInfo.client.say(_clientInfo.channel, `Usage: !${mode} <channelName>`);
+        return;
+    }
+
+    if (mode === "subscribe" && isSubscribed(userLogin)) {
+        _clientInfo.client.say(_clientInfo.channel, `Already subscribed to ${userLogin}.`);
+        return;
+    }
+
+    _pendingCommands.set(userLogin.toLowerCase(), { clientInfo, mode });
+
+    switch (mode) {
+        case "subscribe":
+            subscribe(userLogin, true);
+            break;
+        case "unsubscribe":
+            unsubscribe(userLogin);
+            break;
+        default:
+            console.log("Twitch API - Unknown subscription mode.");
+            break;
+    }
+}
+
+function isSubscribed(channelName) {
+    let subData = fs.readJsonSync(_subsFilePath, { throws: false });
+    if (!subData)
+        subData = {};
+    return subData[channelName] !== undefined;
+}
+
+function listActiveSubscriptions(clientInfo) {
+    _clientInfo = clientInfo;
+    try {
+        let subData = fs.readJsonSync(_subsFilePath, { throws: false });
+        if (!subData)
+            subData = {};
+        let channels = [];
+        for (let channelName in subData)
+            channels.push(channelName);
+        let message = channels.length > 0 ?
+            `Active Twitch subscriptions: ${channels.join(", ")}`:
+            "No active Twitch subscriptions.";
+        _clientInfo.client.say(_clientInfo.channel, message);
+    }
+    catch (e) {
+        console.log(e);
+    }
+}
+
+function listKnownLiveStreams (clientInfo) {
+    _clientInfo = clientInfo;
+    // this won't work for streams that were live before the bot was started ¯\_(?)_/¯
+    try {
+        let liveChannels = [];
+        for (const id in _knownLiveStreams) {
+            const stream = _knownLiveStreams[id];
+            if (stream && stream.type === "live")
+                liveChannels.push(`https://twitch.tv/${stream.user_name.toLowerCase()}`);
+        }
+        let message = liveChannels.length > 0 ?
+            `Active live streams: ${liveChannels.join(", ")}` :
+            "No channels are currently live.";
+        _clientInfo.client.say(_clientInfo.channel, message);
+    } catch (e) {
+        console.log(e);
+    }
+}
+
+function subscribe(userLogin) {
+    sendRequest("https://api.twitch.tv/helix/users?login=" + userLogin, onSubscriptionResponse);
+}
+
+function unsubscribe(userLogin) {
+    sendRequest("https://api.twitch.tv/helix/users?login=" + userLogin, onUnsubscriptionResponse);
+}
+
+function onSubscriptionResponse(error, response, body) {
+    sendSubscriptionRequest(error, response, body, "subscribe", onSubscriptionResponse);
+}
+
+function onUnsubscriptionResponse(error, response, body) {
+    sendSubscriptionRequest(error, response, body, "unsubscribe", onUnsubscriptionResponse);
+}
+
+function sendSubscriptionRequest(error, response, body, mode, callback) {
+    let stream = getResponseData(error, response, body, callback);
+    if (!stream)
+        return;
+
+    if (!_pendingResubs.has(stream.id))
+        _pendingResubs.set(stream.id, stream);
+
+    const loginToLower = stream.login.toLowerCase();
+    if (_pendingCommands.has(loginToLower)) {
+        _pendingCommands.set(stream.id, _pendingCommands.get(loginToLower));
+        _pendingCommands.delete(loginToLower);
+    }
+
+    const url = new URL(`${_route}${stream.id}`, `${_callbackBaseUrl}:${_port}`);
+    if (_verboseLogs)
+        console.log("Callback url:", url.href);
+        
+    request.post({
+        url: "https://api.twitch.tv/helix/webhooks/hub",
+        form: {
+            "hub.callback": url.href,
+            "hub.mode": mode,
+            "hub.topic": "https://api.twitch.tv/helix/streams?user_id=" + stream.id,
+            "hub.lease_seconds": _lease_seconds,
+            "hub.secret": _clientSecret
+        },
+        headers: getRequestHeaders()
+    }, function (error, response, body) {
+        if (response.statusCode === 202) {
+            if (_verboseLogs)
+                console.log("Twitch API - Updated stream subscription:\n", stream);
+        } else {
+            console.log("Twitch API - failed to subscribe to channel: " + stream.login + ", " + JSON.parse(body).message);
+            pendingCommandHandled(stream.id, `Failed to ${mode}.`)
+        }
+    });
+}
+
+function pendingCommandHandled(streamId, message) {
+    if (_pendingCommands.has(streamId)) {
+        const commandInfo = _pendingCommands.get(streamId);
+        commandInfo.clientInfo.client.say(commandInfo.clientInfo.channel, message);
+        _pendingCommands.delete(streamId);
     }
 }
 
