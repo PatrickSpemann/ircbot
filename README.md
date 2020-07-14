@@ -25,13 +25,18 @@ This file must contain all the properties and data types as this example:
         "botAdmin.users.quakenet.org"
     ],
     "twitchClientID": "0123456789abcdefghijABCDEFGHIJ",
-	"twitchClientSecret": "abcdefghijABCDEFGHIJ0123456789",
+    "twitchClientSecret": "abcdefghijABCDEFGHIJ0123456789",
+    "port": 80,
     "statsResponse": "https://mywebsite.com/stats.json",
     "quotesResponse": "https://mywebsite.com/quotes.json"
 }
 ```
+`port` is optional and will default to 80 if not present
 `statsResponse` is optional and, if present, will be sent to the channel when a user types `!stats`  
 `quotesResponse` is optional and, if present, will be sent to the channel when a user types `!quotes`
+
+## Notes
+* Port 80 needs to be open and forwarded for the Twitch API to work.
 
 ## TODOs
 * Fix async (members)
