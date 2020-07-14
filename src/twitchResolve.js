@@ -13,6 +13,7 @@ let _clientID = undefined;
 let _clientSecret = undefined;
 let _auth = undefined;
 let _callbackBaseUrl = undefined;
+let _publicIp = undefined;
 let _port = 80;
 
 let _knownLiveStreams = {};
@@ -283,7 +284,7 @@ function listActiveSubscriptions(clientInfo) {
 
 function listKnownLiveStreams (clientInfo) {
     _clientInfo = clientInfo;
-    // this won't work for streams that were live before the bot was started ¯\_(?)_/¯
+    // this won't work for streams that were live before the bot was started Â¯\_(?)_/Â¯
     try {
         let liveChannels = [];
         for (const id in _knownLiveStreams) {
