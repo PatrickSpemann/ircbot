@@ -19,7 +19,6 @@ let _clientID = undefined;
 let _clientSecret = undefined;
 let _auth = undefined;
 let _callbackBaseUrl = undefined;
-let _publicIp = undefined;
 let _port = 80;
 
 let _knownLiveStreams = {};
@@ -46,8 +45,7 @@ async function initTwitchApi(clientInfo, options) {
         console.log("Twitch API - missing port.");
     _port = options.port;
 
-    let _publicIp =await publicIp.v4();
-    _callbackBaseUrl = `http://${_publicIp}`;
+    _callbackBaseUrl = `http://${await publicIp.v4()}`;
     initExpressApp();
     requestAccessToken().then(() => restoreSubscriptions()).catch((error) => console.log(error));
 }
@@ -132,7 +130,7 @@ function initExpressApp() {
         return req.twitch_hub && req.twitch_hex === req.twitch_signature;
     }
 
-    expressApp.listen(_port, _publicIp, () => console.log("Listening on port: " + _port));
+    expressApp.listen(_port, () => console.log("Listening on port: " + _port));
 }
 
 function onSubscriptionScheduleResub(userId, lease_seconds) {
