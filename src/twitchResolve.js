@@ -2,18 +2,23 @@ const util = require("util");
 const request = require("request");
 const requestPostP = util.promisify(request.post);
 const URL = require("url-parse");
+const schedule = require("node-schedule");
+const fs = require("fs-extra");
+const publicIp = require("public-ip");
+const express = require("express");
+const expressApp = express();
+const crypto = require("crypto");
 
-var _clientInfo = undefined;
-var _clientID = undefined;
-var _clientSecret = undefined;
-var _auth = undefined;
+const _lease_seconds = 86400; // max 864000 (10d)
+const _subsFilePath = "./twitchSubs.json";
+const _route = "/TwitchSubs/";
+const _verboseLogs = false;
 
 let _clientInfo = undefined;
 let _clientID = undefined;
 let _clientSecret = undefined;
 let _auth = undefined;
 let _callbackBaseUrl = undefined;
-let _publicIp = undefined;
 let _port = 80;
 
 let _knownLiveStreams = {};
@@ -23,13 +28,17 @@ let _pendingCommands = new Map();
 // TODO handle rate limits
 
 module.exports = {
-    initCredentials,
-    handleTwitchUrl
-}
+    initTwitchApi,
+    handleTwitchUrl,
+    handleSubscription,
+    listActiveSubscriptions,
+    listKnownLiveStreams
+};
 
-function initCredentials (options) {
+async function initTwitchApi(clientInfo, options) {
+    _clientInfo = clientInfo;
     if (!options.twitchClientID || !options.twitchClientSecret)
-        console.log("Twitch API: missing credentials in settings.")
+        console.log("Twitch API - missing credentials in settings.")
     _clientID = options.twitchClientID;
     _clientSecret = options.twitchClientSecret;
     if (!options.port)
@@ -210,8 +219,8 @@ function restoreSubscriptions() {
 
 function handleTwitchUrl(clientInfo, url) {
     _clientInfo = clientInfo;
-    var urlObject = new URL(url);
-    var path = urlObject.pathname.split("/")[1];
+    let urlObject = new URL(url);
+    let path = urlObject.pathname.split("/")[1];
     if (!path || path === "")
         return false;
 
@@ -375,64 +384,49 @@ function getRequestHeaders() {
     return {
         "Authorization": _auth,
         "Client-ID": _clientID
-	}
+    }
 }
 
 function onStreamsResponse(error, response, body) {
-    var stream = getResponseData(error, response, body, onStreamsResponse);
+    let stream = getResponseData(error, response, body, onStreamsResponse);
     if (!stream)
         return;
-    var message = stream.title + " [" + stream.viewer_count + "]";
+    let message = stream.title + " [" + stream.viewer_count + "]";
     postMessageWithGameCategory(stream.game_id, message);
 }
 
 function onClipsResponse(error, response, body) {
-    var clipInfo = getResponseData(error, response, body, onClipsResponse);
+    let clipInfo = getResponseData(error, response, body, onClipsResponse);
     if (!clipInfo)
         return;
-    var message = clipInfo.broadcaster_name + ": " + clipInfo.title + " [" + clipInfo.view_count + "]";
+    let message = clipInfo.broadcaster_name + ": " + clipInfo.title + " [" + clipInfo.view_count + "]";
     postMessageWithGameCategory(clipInfo.game_id, message);
 }
 
-function getResponseData(error, response, body, errorCallback=undefined) {
+function getResponseData(error, response, body, errorCallback = undefined) {
     try {
-        var json = JSON.parse(body);
+        let json = JSON.parse(body);
         if (json.error && errorCallback)
-            handleResponseError(response, json, errorCallback);            
+            handleResponseError(response, json, errorCallback);
         else
             return json.data[0];
     }
     catch (e) {
         console.log(e.message);
-    }    
+    }
 }
 
 function postMessageWithGameCategory(game_id, message) {
     sendRequest("https://api.twitch.tv/helix/games?id=" + game_id, (error, response, body) => {
-        var category = getResponseData(error, response, body);
+        let category = getResponseData(error, response, body);
         if (category)
-		    message += " [" + category.name + "]";
-		_clientInfo.client.say(_clientInfo.channel, message);
-	});
+            message += " [" + category.name + "]";
+        _clientInfo.client.say(_clientInfo.channel, message);
+    });
 }
 
 function handleResponseError(response, bodyAsJson, callback) {
     console.log("Twitch API - request failed: " + bodyAsJson.message);
     if (bodyAsJson.status === 401) // Unauthorized - request a new access token and resend the original request
         requestAccessToken().then(() => sendRequest(response.request.href, callback)).catch((error) => console.log(error));
-}
-
-function requestAccessToken() {
-    return requestPostP({
-        url: "https://id.twitch.tv/oauth2/token?client_id=" + _clientID,
-        form: {client_secret: _clientSecret, grant_type: "client_credentials"},
-        headers: {"content-type": "application/json"}
-    }).then((response, body) => setAccessToken(response, body));
-}
-
-function setAccessToken(response, body) {
-    var json = JSON.parse(response.body);
-    if (response.statusCode !== 200)
-        throw "Twitch API - failed to set access token: " + json.message;
-    _auth = "Bearer " + json.access_token;
 }
