@@ -1,6 +1,5 @@
 /node_modules
 /.vscode
-/.vs
 settings.json
 stats.json
 seenState.json
@@ -8,5 +7,3 @@ seenState.json
 /quotes.json
 /timers.json
 /messages.json
-/twitchSubs.json
-/ngrok.exe

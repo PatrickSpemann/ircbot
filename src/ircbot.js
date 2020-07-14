@@ -35,7 +35,7 @@ module.exports.start = function (options) {
     seenState.registerEvents(_client);
     _client.addListener("error", onError);
 
-    twitchResolve.initTwitchApi(composeClientInfo(), options);
+    twitchResolve.initCredentials(options);
 
     timer.restore(_client);
     setInterval(renameSelf, 1000 * 60 * 5 /* 5 minutes */);
@@ -64,7 +64,11 @@ function onWhoisResult(info) {
 function onMessage(userName, channel, message) {
     if (userName === _options.nickname)
         return;
-    var clientInfo = composeClientInfo(userName, channel);
+    var clientInfo = {
+        client: _client,
+        userName: userName,
+        channel: channel
+    };
     if (directResponse(clientInfo, message, _options.nickname))
         return;
     if (handleCommand(clientInfo, message, _options))
@@ -73,16 +77,6 @@ function onMessage(userName, channel, message) {
     for (var url of urls)
         resolveUrl(clientInfo, url);
 }
-
-function composeClientInfo (userName="", activeChannel="") {
-    return {
-        client: _client,
-        userName: userName,
-        channel: activeChannel,
-        channels: _options.channels
-    };
-}
-
 function resolveUrl(clientInfo, url) {
     var resolvers = [imdbResolve, youtubeResolve, twitchResolve.handleTwitchUrl, genericResolve]; //order is important!
     for (var i = 0; i < resolvers.length; i++)
