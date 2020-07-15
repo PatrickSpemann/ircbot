@@ -163,6 +163,7 @@ function scheduleResubJob(time, id, login) {
 }
 
 function onUnsubscriptionCancelResub(id) {
+    _knownLiveStreams[id] = undefined;
     deleteSubscriptionFromFile(id);
     schedule.cancelJob("twitchResub" + id);
 }
