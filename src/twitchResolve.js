@@ -250,6 +250,10 @@ function handleSubscription(clientInfo, mode, params) {
         _clientInfo.client.say(_clientInfo.channel, `Already subscribed to ${userLogin}.`);
         return;
     }
+    if (mode === "unsubscribe" && !isSubscribed(userLogin)) {
+        _clientInfo.client.say(_clientInfo.channel, `Not subscribed to ${userLogin}.`);
+        return;
+    }
 
     _pendingCommands.set(userLogin.toLowerCase(), { clientInfo, mode });
 
