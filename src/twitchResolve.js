@@ -163,6 +163,7 @@ function scheduleResubJob(time, id, login) {
 }
 
 function onUnsubscriptionCancelResub(id) {
+    _knownLiveStreams[id] = undefined;
     deleteSubscriptionFromFile(id);
     schedule.cancelJob("twitchResub" + id);
 }
@@ -247,6 +248,10 @@ function handleSubscription(clientInfo, mode, params) {
 
     if (mode === "subscribe" && isSubscribed(userLogin)) {
         _clientInfo.client.say(_clientInfo.channel, `Already subscribed to ${userLogin}.`);
+        return;
+    }
+    if (mode === "unsubscribe" && !isSubscribed(userLogin)) {
+        _clientInfo.client.say(_clientInfo.channel, `Not subscribed to ${userLogin}.`);
         return;
     }
 
