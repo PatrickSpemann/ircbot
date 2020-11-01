@@ -14,6 +14,8 @@ const _subsFilePath = "./twitchSubs.json";
 const _route = "/TwitchSubs/";
 const _verboseLogs = false;
 
+const _liveNotificationTimeout = 600000; // 10m
+
 let _clientInfo = undefined;
 let _clientID = undefined;
 let _clientSecret = undefined;
@@ -22,6 +24,7 @@ let _callbackBaseUrl = undefined;
 let _port = 80;
 
 let _knownLiveStreams = {};
+let _recentLiveNotifications = {};
 let _pendingResubs = new Map();
 let _pendingCommands = new Map();
 
@@ -116,8 +119,13 @@ function initExpressApp() {
             if (!requestId)
                 throw "No request id";
             // post a going live message if the user wasn't live before
-            if (data && data.type === "live" && (!_knownLiveStreams[requestId] || _knownLiveStreams[requestId].type !== "live"))
+            if (data && data.type === "live" && !_recentLiveNotifications[requestId] && (!_knownLiveStreams[requestId] || _knownLiveStreams[requestId].type !== "live")) {
                 _clientInfo.channels.forEach(channel => _clientInfo.client.say(channel, `https://twitch.tv/${data.user_name.toLowerCase()} just went live! Title: ${data.title}`));
+                _recentLiveNotifications[requestId] = true;
+                setTimeout(() => {
+                    _recentLiveNotifications[requestId] = false;
+                }, _liveNotificationTimeout);
+            }
             _knownLiveStreams[requestId] = data;
             res.status(200).send();
         } catch (e) {
@@ -259,7 +267,7 @@ function handleSubscription(clientInfo, mode, params) {
 
     switch (mode) {
         case "subscribe":
-            subscribe(userLogin, true);
+            subscribe(userLogin);
             break;
         case "unsubscribe":
             unsubscribe(userLogin);
@@ -298,7 +306,7 @@ function listActiveSubscriptions(clientInfo) {
 
 function listKnownLiveStreams (clientInfo) {
     _clientInfo = clientInfo;
-    // this won't work for streams that were live before the bot was started ¯\_(?)_/¯
+    // this won't work for streams that were live before the bot was started
     try {
         let liveChannels = [];
         for (const id in _knownLiveStreams) {
