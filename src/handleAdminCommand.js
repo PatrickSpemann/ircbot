@@ -1,5 +1,6 @@
 var utils = require("./ircbot-utils");
 var quote = require("./quote");
+var ignoreList = require("./commandIgnoreList")
 var _client = undefined;
 
 module.exports = function (clientInfo, message) {
@@ -27,6 +28,12 @@ function handleCommand(message) {
             break;
         case "removequote":
             quote.remove(_clientInfo, parameters);
+            break;
+        case "ignore":
+            ignoreList.addToList(parameters);
+            break;
+        case "unignore":
+            ignoreList.removeFromList(parameters);
             break;
         default:
             break;

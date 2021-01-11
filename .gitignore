@@ -4,6 +4,7 @@
 settings.json
 stats.json
 seenState.json
+ignoreList.json
 /ircbot.service
 /quotes.json
 /timers.json
