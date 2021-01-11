@@ -35,6 +35,9 @@ Your host must be listed under `adminHosts` in the `settings.json`.
 * `!nick <nickname>`: Changes the nickname to the supplied `nickname`. Example usage: `!nick MyBot2`
 * `!removequote <index>`: Removes the quote with the supplied `index` from the database. Example usage: `!removequote 3`
 * `!say <target> <message>`: Sends the supplied `message` to the supplied `target`. Example usage: 
+* `!ignore <nickname>`: Ignores all future commands from the given nickname. Note: URL resolves will still work.
+* `!unignore <nickname>`: Removes the given nickname from the ignore list.
+
 ```
 !say #myChannel Hello World!
 !say username Hello friend!

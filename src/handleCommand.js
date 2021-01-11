@@ -15,14 +15,17 @@ var timer = require("./timer");
 var jokes = require("./jokes")
 var cryptoCurrency = require("./cryptoCurrency");
 var weather = require("./weather");
-var delayedMessage = require("./delayedMessage")
+var delayedMessage = require("./delayedMessage");
+var ignoreList = require("./commandIgnoreList");
 var _clientInfo = undefined;
 var _options = undefined;
 
 module.exports = function (clientInfo, message, options) {
     _clientInfo = clientInfo;
+    if(ignoreList.contains(clientInfo.userName))
+        return true;
     _options = options;
-    handleCommand(message);
+    return handleCommand(message);
 };
 function handleCommand(message) {
     var command = utils.extractCommand(message);
