@@ -13,7 +13,6 @@ var seen = require("./seen");
 var quote = require("./quote");
 var timer = require("./timer");
 var jokes = require("./jokes")
-var cryptoCurrency = require("./cryptoCurrency");
 var weather = require("./weather");
 var delayedMessage = require("./delayedMessage");
 var ignoreList = require("./commandIgnoreList");
@@ -108,10 +107,6 @@ function executeCommand(command, parameters) {
         case "joke":
             jokes.get(_clientInfo, parameters);
             return "joke"
-        case "price":
-        case "crypto":
-            cryptoCurrency(_clientInfo, parameters);
-            return "crypto";
         case "w":
         case "weather":
             weather(_clientInfo, parameters);
