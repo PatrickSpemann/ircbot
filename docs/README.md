@@ -22,6 +22,7 @@ Post these commands in any channel where the bot is present
 * `!sub` or `!subscribe`: Subscribe to a twitch channel to be notified when it goes live. Example: `!sub uman`
 * `!unsub` or `!unsubscribe`: Unsubscribe from a twitch channel to no longer be notified when it goes live. Example: `!unsub xqcow`
 * `!twitchsubs`: List all of the currently subscribed channels.
+* `!resub`: Tries to resubscribe to any inactive twitch channel subscriptions.
 * `!live`: List all subscribed channels that are currently live.
 
 # Remote Control

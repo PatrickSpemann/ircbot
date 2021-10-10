@@ -2,7 +2,9 @@ var utils = require("./ircbot-utils");
 var imdbSearch = require("./imdbSearch");
 var youtubeSearch = require("./youtubeSearch");
 var twitchSubscribe = require("./twitchResolve").handleSubscription;
+var setCallback = require("./twitchResolve").setCallbackUrl;
 var twitchListSubscriptions = require("./twitchResolve").listActiveSubscriptions;
+var restoreSubscriptions = require("./twitchResolve").restoreSubscriptions;
 var listKnownLiveStreams = require("./twitchResolve").listKnownLiveStreams;
 var poeSearch = require("./poeSearch");
 var googleSearch = require("./googleSearch");
@@ -61,6 +63,9 @@ function executeCommand(command, parameters) {
         case "twitchsubs":
             twitchListSubscriptions(_clientInfo);
             return "twitchsubs";
+        case "twitchresub":
+            restoreSubscriptions(_clientInfo);
+            return "twitchresub"
         case "live":
             listKnownLiveStreams(_clientInfo);
             return "live";
@@ -115,6 +120,10 @@ function executeCommand(command, parameters) {
         case "msg":
             delayedMessage.register(_clientInfo, parameters);
             return "message"
+        case "c":
+            setCallback(parameters);
+            _clientInfo.client.say(_clientInfo.channel, "callback set to " + parameters);
+            return "c";
         default:
             return "";
     }

@@ -26,13 +26,11 @@ This file must contain all the properties and data types as this example:
     ],
     "twitchClientID": "0123456789abcdefghijABCDEFGHIJ",
     "twitchClientSecret": "abcdefghijABCDEFGHIJ0123456789",
-    "port": 80,
     "callbackBaseUrl": "http://hostname.com",
     "statsResponse": "https://mywebsite.com/stats.json",
     "quotesResponse": "https://mywebsite.com/quotes.json"
 }
 ```
-`port` is optional and will default to 80 if not present
 `callbackBaseUrl` is optional, it is used in place of the public IP of the machine for use by the Twitch API
 `statsResponse` is optional and, if present, will be sent to the channel when a user types `!stats`  
 `quotesResponse` is optional and, if present, will be sent to the channel when a user types `!quotes`
