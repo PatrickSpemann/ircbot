@@ -8,10 +8,11 @@ const express = require("express");
 const expressApp = express();
 const crypto = require("crypto");
 const { json } = require("express");
+const https = require('https');
 
 const _subsFilePath = "./twitchSubs.json";
 const _route = "/TwitchSubs/";
-const _verboseLogs = true;
+const _verboseLogs = false;
 
 const _liveNotificationTimeout = 600000; // 10m
 
@@ -21,7 +22,8 @@ let _clientSecret = undefined;
 const _sessionSecret = crypto.randomBytes(30).toString('hex');
 let _auth = undefined;
 let _callbackBaseUrl = undefined;
-const _port = 80; // port 443 must be used according to spec
+const _port = 443; // port 443 must be used according to spec
+let _httpsOptions = undefined;
 
 let _knownLiveStreams = {};
 let _recentLiveNotifications = {};
@@ -52,7 +54,16 @@ async function initTwitchApi(clientInfo, options) {
         console.log("Twitch API - missing credentials in settings.")
     _clientID = options.twitchClientID;
     _clientSecret = options.twitchClientSecret;
-    _callbackBaseUrl = (options.callbackBaseUrl) ? (options.callbackBaseUrl) : `http://${await publicIp.v4().catch(e => console.log(e))}`;
+    _callbackBaseUrl = (options.callbackBaseUrl) ? (options.callbackBaseUrl) : `https://${await publicIp.v4().catch(e => console.log(e))}`;
+    try {
+        _httpsOptions = {
+            key: fs.readFileSync(options.httpsKeyPath),
+            cert: fs.readFileSync(options.httpsCertificatePath)
+        };
+    } catch (e) {
+        _clientInfo.channels.forEach(channel => _clientInfo.client.say(channel, `Failed to load certificates. ${e}`));
+    }
+
     initExpressApp();
     requestAccessToken().then(() => restoreSubscriptions()).catch((error) => console.log(error));
 }
@@ -155,6 +166,7 @@ function initExpressApp() {
     expressApp.listen(_port, "0.0.0.0", () => console.log("Listening on port: " + _port)).on("error", function (error) {
         console.log("Twitch API - failed to init server:", error);
     });
+    https.createServer(_httpsOptions, expressApp).listen(_port);
 }
 
 function onSubscriptionSaveToFile(userId, subId) {
@@ -346,8 +358,10 @@ function subscribeByUserId(userId) {
     let subData = fs.readJsonSync(_subsFilePath, { throws: false });
     if (subData) {
         for (const userLogin in subData) {
-            if (subData[userLogin].id === userId)
+            if (subData[userLogin].id === userId) {
                 sendRequest("https://api.twitch.tv/helix/users?login=" + userLogin, onSubscriptionResponse);
+                break;
+            }
         }
     }
 }
@@ -417,8 +431,7 @@ function sendSubscriptionRequest(error, response, body, callback) {
 
     addStreamInfoToPendingSubRequests(stream);
 
-    //const url = new URL(`${_route}${stream.id}`, `${_callbackBaseUrl}:${_port}`);
-    const url = new URL(`${_route}${stream.id}`, `${_callbackBaseUrl}:443`); // TODO revert later
+    const url = new URL(`${_route}${stream.id}`, `${_callbackBaseUrl}:${_port}`);
     if (_verboseLogs)
         console.log("Callback url:", url.href);
     request.post({

@@ -26,6 +26,8 @@ This file must contain all the properties and data types as this example:
     ],
     "twitchClientID": "0123456789abcdefghijABCDEFGHIJ",
     "twitchClientSecret": "abcdefghijABCDEFGHIJ0123456789",
+    "httpsCertificatePath": "C:/myPath/mockcert.cert",
+	"httpsKeyPath": "C:/myPath/mockcert.key",
     "callbackBaseUrl": "http://hostname.com",
     "statsResponse": "https://mywebsite.com/stats.json",
     "quotesResponse": "https://mywebsite.com/quotes.json"
@@ -34,6 +36,7 @@ This file must contain all the properties and data types as this example:
 `callbackBaseUrl` is optional, it is used in place of the public IP of the machine for use by the Twitch API
 `statsResponse` is optional and, if present, will be sent to the channel when a user types `!stats`  
 `quotesResponse` is optional and, if present, will be sent to the channel when a user types `!quotes`
+`httpsCertificatePath` and `httpsKeyPath` should provide valid links to the server's https certificate files (without them twitch integration will not work).
 
 
 ## TODOs
