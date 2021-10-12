@@ -22,6 +22,7 @@ let _clientSecret = undefined;
 const _sessionSecret = crypto.randomBytes(30).toString('hex');
 let _auth = undefined;
 let _callbackBaseUrl = undefined;
+const _portExpress = 80;
 const _port = 443; // port 443 must be used according to spec
 let _httpsOptions = undefined;
 
@@ -163,10 +164,12 @@ function initExpressApp() {
         return req.twitch_hub && req.twitch_hex === req.twitch_signature;
     }
 
-    expressApp.listen(_port, "0.0.0.0", () => console.log("Listening on port: " + _port)).on("error", function (error) {
+    expressApp.listen(_portExpress, "0.0.0.0", () => console.log("Listening on port: " + _portExpress)).on("error", function (error) {
         console.log("Twitch API - failed to init server:", error);
     });
-    https.createServer(_httpsOptions, expressApp).listen(_port);
+    https.createServer(_httpsOptions, expressApp).listen(_port, "0.0.0.0", () => console.log("Listening on port: " + _port)).on("error", function (error) {
+        console.log("Twitch API - failed to init server:", error);
+    });
 }
 
 function onSubscriptionSaveToFile(userId, subId) {
@@ -432,8 +435,10 @@ function sendSubscriptionRequest(error, response, body, callback) {
     addStreamInfoToPendingSubRequests(stream);
 
     const url = new URL(`${_route}${stream.id}`, `${_callbackBaseUrl}:${_port}`);
-    if (_verboseLogs)
+    if (_verboseLogs) {
         console.log("Callback url:", url.href);
+        console.log("Session secret: ", _sessionSecret);
+    }
     request.post({
         url: "https://api.twitch.tv/helix/eventsub/subscriptions",
         body: {
