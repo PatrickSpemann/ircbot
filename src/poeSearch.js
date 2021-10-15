@@ -1,7 +1,7 @@
 var request = require("request");
 
-const basicSearchUrl = "https://pathofexile.gamepedia.com/api.php?action=opensearch&format=json&search=";
-const titleSearchUrl = "https://pathofexile.gamepedia.com/api.php?action=query&list=search&format=json&srsearch=";
+const basicSearchUrl = "https://poewiki.net/w/api.php?action=opensearch&format=json&search=";
+const titleSearchUrl = "https://poewiki.net/w/api.php?action=query&list=search&format=json&srsearch=";
 
 var _clientInfo = undefined;
 var _searchString = "";
